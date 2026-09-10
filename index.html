@@ -24,6 +24,7 @@
     try{
       const query=new URLSearchParams(location.search);
       const session=(query.get('session')||'').trim().toLowerCase();
+      const lab=query.get('lab')==='1';
       if(!/^[0-9a-f-]{36}$/i.test(session)) throw new Error('Некорректная ссылка на сессию');
 
       const hash=new URLSearchParams(location.hash.replace(/^#/,''));
@@ -32,7 +33,9 @@
       if(incoming){
         if(!/^[0-9a-f]{64}$/i.test(incoming)) throw new Error('Некорректный ключ доступа');
         sessionStorage.setItem(tokenKey,incoming);
-        history.replaceState({},'',location.pathname+'?session='+encodeURIComponent(session));
+        const clean=new URLSearchParams({session});
+        if(lab) clean.set('lab','1');
+        history.replaceState({},'',location.pathname+'?'+clean.toString());
       }
       const token=sessionStorage.getItem(tokenKey)||'';
       if(!/^[0-9a-f]{64}$/i.test(token)) {
@@ -40,7 +43,11 @@
       }
 
       const gateway='https://qbsovyjwnxmryokekypf.supabase.co/functions/v1/shorts-storyboard-api';
-      const response=await fetch(gateway+'/template?session='+encodeURIComponent(session),{cache:'no-store'});
+      const templateGateway=lab
+        ?'https://qbsovyjwnxmryokekypf.supabase.co/functions/v1/shorts-storyboard-editor-lab'
+        :gateway;
+      if(lab) status.textContent='Открываю UX-прототип…';
+      const response=await fetch(templateGateway+'/template?session='+encodeURIComponent(session),{cache:'no-store'});
       if(!response.ok) throw new Error('Не удалось загрузить интерфейс: HTTP '+response.status);
       let html=new TextDecoder('utf-8').decode(await response.arrayBuffer());
 
