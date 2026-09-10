@@ -24,10 +24,10 @@
     try{
       const query=new URLSearchParams(location.search);
       const session=(query.get('session')||'').trim().toLowerCase();
-      const lab=query.get('lab')==='1';
+      const hash=new URLSearchParams(location.hash.replace(/^#/,''));
+      const lab=query.get('lab')==='1'||hash.get('lab')==='1';
       if(!/^[0-9a-f-]{36}$/i.test(session)) throw new Error('Некорректная ссылка на сессию');
 
-      const hash=new URLSearchParams(location.hash.replace(/^#/,''));
       const incoming=(hash.get('token')||'').trim().toLowerCase();
       const tokenKey='carniStoryboardToken:'+location.pathname;
       if(incoming){
