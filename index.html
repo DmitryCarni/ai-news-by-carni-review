@@ -6,67 +6,143 @@
   <meta name="robots" content="noindex,nofollow,noarchive">
   <meta name="referrer" content="no-referrer">
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; connect-src https://qbsovyjwnxmryokekypf.supabase.co; img-src https://*.supabase.co data:; style-src 'unsafe-inline'; script-src 'unsafe-inline'; base-uri 'none'; form-action 'none'">
-  <title>AI News by Carni — Storyboard Review</title>
+  <title>AI News by Carni — Review</title>
   <style>
-    html,body{margin:0;min-height:100%;background:#07101d;color:#f4f7fb;font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
-    .boot{max-width:520px;margin:20vh auto 0;padding:22px;text-align:center}
-    .bad{color:#ff9ba3}.muted{color:#93a4ba;font-size:13px}
+    :root{--bg:#07101d;--card:#0b1727;--line:#233b57;--text:#f4f7fb;--muted:#93a4ba;--cyan:#42b7ff;--green:#58d9ac;--red:#ff7b86}
+    *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+    button{font:inherit}.boot{max-width:620px;margin:20vh auto 0;padding:22px;text-align:center}.bad{color:var(--red)}.muted{color:var(--muted);font-size:13px}
+    .portal{max-width:1050px;margin:0 auto;padding:24px 16px 60px}.top{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:18px}.brand{font-size:18px;font-weight:900}.sub{color:var(--muted);font-size:13px;margin-top:4px}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}.hero{display:grid;grid-template-columns:1fr auto;gap:16px;align-items:center;margin-bottom:12px}.hero h1{font-size:22px;margin:0 0 6px}.btn{border:1px solid #315276;background:#10223a;color:#eef7ff;border-radius:10px;padding:9px 13px;cursor:pointer;font-weight:800}.btn:hover{border-color:var(--cyan)}.btn.primary{background:#123b55;border-color:#2b83b7}.btn.green{border-color:#347d67;background:#10352e}.btn:disabled{opacity:.55;cursor:default}
+    .pair{max-width:560px;margin:14vh auto 0;text-align:center}.pairCode{font-size:48px;letter-spacing:.16em;font-weight:950;margin:18px 0;color:#fff}.pairHint{line-height:1.55;color:var(--muted)}.hidden{display:none!important}
+    .sessions{display:grid;gap:8px;margin-top:12px}.session{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px;border:1px solid #1e354f;border-radius:11px;background:#091421}.sessionTitle{font-weight:850;overflow-wrap:anywhere}.sessionMeta{font-size:12px;color:var(--muted);margin-top:4px}.status{display:inline-block;border:1px solid #35516f;border-radius:999px;padding:2px 7px;margin-left:6px;font-size:11px;color:#bdd0e5}
+    @media(max-width:650px){.hero,.session{grid-template-columns:1fr}.top{align-items:flex-start;flex-direction:column}.pairCode{font-size:38px}}
   </style>
 </head>
 <body>
-  <div class="boot">
-    <b>AI NEWS BY CARNI · STORYBOARD</b>
-    <p id="status" class="muted">Открываю мобильный редактор…</p>
-  </div>
+  <div id="app"><div class="boot"><b>AI NEWS BY CARNI · REVIEW</b><p id="bootStatus" class="muted">Открываю…</p></div></div>
   <script>
   (async()=>{
-    const status=document.getElementById('status');
-    try{
-      const query=new URLSearchParams(location.search);
+    const SUPABASE='https://qbsovyjwnxmryokekypf.supabase.co/functions/v1';
+    const gateway=SUPABASE+'/shorts-storyboard-api';
+    const portalApi=SUPABASE+'/shorts-review-portal';
+    const portalKey='carniReviewPortalToken';
+    const app=document.getElementById('app');
+    const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const statusName=s=>({editing:'редактирование',approved:'одобрено',preview_ready:'preview готов',preview_requested:'preview в очереди',preview_claimed:'рендерится'})[String(s||'')]||String(s||'—');
+
+    async function openSession(query){
       const session=(query.get('session')||'').trim().toLowerCase();
+      const portalMode=query.get('portal')==='1';
       const hash=new URLSearchParams(location.hash.replace(/^#/,''));
       const lab=query.get('lab')==='1'||hash.get('lab')==='1';
       if(!/^[0-9a-f-]{36}$/i.test(session)) throw new Error('Некорректная ссылка на сессию');
 
       const incoming=(hash.get('token')||'').trim().toLowerCase();
       const tokenKey='carniStoryboardToken:'+location.pathname;
-      if(incoming){
+      if(incoming&&!portalMode){
         if(!/^[0-9a-f]{64}$/i.test(incoming)) throw new Error('Некорректный ключ доступа');
         sessionStorage.setItem(tokenKey,incoming);
-        const clean=new URLSearchParams({session});
-        if(lab) clean.set('lab','1');
-        history.replaceState({},'',location.pathname+'?'+clean.toString());
-      }
-      const token=sessionStorage.getItem(tokenKey)||'';
-      if(!/^[0-9a-f]{64}$/i.test(token)) {
-        throw new Error('Ключ доступа отсутствует или устарел. Открой свежую ссылку из Telegram.');
+        history.replaceState({},'',location.pathname+'?'+query.toString());
       }
 
-      const gateway='https://qbsovyjwnxmryokekypf.supabase.co/functions/v1/shorts-storyboard-api';
-      const templateGateway=lab
-        ?'https://qbsovyjwnxmryokekypf.supabase.co/functions/v1/shorts-storyboard-editor-lab'
-        :gateway;
+      if(portalMode){
+        const portalToken=localStorage.getItem(portalKey)||'';
+        if(!/^[0-9a-f]{64}$/i.test(portalToken)) {
+          location.href=location.pathname;
+          return;
+        }
+      }else{
+        const token=sessionStorage.getItem(tokenKey)||'';
+        if(!/^[0-9a-f]{64}$/i.test(token)) {
+          throw new Error('Ключ доступа отсутствует или устарел. Открой свежую ссылку из Telegram или зайди через главную review.carni.ltd.');
+        }
+      }
+
+      app.innerHTML='<div class="boot"><b>AI NEWS BY CARNI · STORYBOARD</b><p id="bootStatus" class="muted">Открываю редактор…</p></div>';
+      const status=document.getElementById('bootStatus');
+      const templateGateway=lab?SUPABASE+'/shorts-storyboard-editor-lab':gateway;
       if(lab) status.textContent='Открываю UX-прототип…';
       const response=await fetch(templateGateway+'/template?session='+encodeURIComponent(session),{cache:'no-store'});
       if(!response.ok) throw new Error('Не удалось загрузить интерфейс: HTTP '+response.status);
-      let html=new TextDecoder('utf-8').decode(await response.arrayBuffer());
+      let editorHtml=new TextDecoder('utf-8').decode(await response.arrayBuffer());
 
       const oldBase="const base=()=>location.pathname.replace(/\\/$/,'');";
       const apiBase=gateway+'/s/'+session;
       const newBase='const base=()=>'+JSON.stringify(apiBase)+';';
-      if(!html.includes(oldBase)) throw new Error('Версия интерфейса несовместима с оболочкой review.carni.ltd');
-      html=html.replace(oldBase,newBase);
-      html=html.replace(
+      if(!editorHtml.includes(oldBase)) throw new Error('Версия интерфейса несовместима с оболочкой review.carni.ltd');
+      editorHtml=editorHtml.replace(oldBase,newBase);
+      editorHtml=editorHtml.replace(
         '<head>',
         '<head><meta name="robots" content="noindex,nofollow,noarchive"><meta name="referrer" content="no-referrer"><meta http-equiv="Content-Security-Policy" content="default-src \'none\'; img-src https://*.supabase.co data:; connect-src https://qbsovyjwnxmryokekypf.supabase.co; style-src \'unsafe-inline\'; script-src \'unsafe-inline\'; base-uri \'none\'; form-action \'none\'">'
       );
+      document.open();document.write(editorHtml);document.close();
+    }
 
-      document.open();
-      document.write(html);
-      document.close();
+    function renderPair(){
+      app.innerHTML='<div class="portal"><div class="pair card"><div class="brand">AI NEWS BY CARNI · REVIEW</div><h1>Постоянный вход</h1><div class="pairHint">Один раз привяжем этот браузер. После этого <b>review.carni.ltd</b> будет открываться напрямую — без Telegram-ссылок.</div><div id="pairIdle"><button class="btn primary" id="pairStart" style="margin-top:18px">Привязать этот браузер</button></div><div id="pairWait" class="hidden"><div class="pairCode" id="pairCode"></div><div class="pairHint">Пришли этот шестизначный код Чатику. Код живёт 10 минут.<br><span id="pairState">Жду подтверждения…</span></div></div><div id="pairError" class="bad" style="margin-top:12px"></div></div></div>';
+      document.getElementById('pairStart').onclick=startPairing;
+    }
+
+    async function startPairing(){
+      const btn=document.getElementById('pairStart'),err=document.getElementById('pairError');
+      btn.disabled=true;err.textContent='';
+      try{
+        const r=await fetch(portalApi+'/pair/start',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({deviceName:'Vivaldi · review.carni.ltd'})});
+        const j=await r.json();
+        if(!r.ok||!j.ok)throw new Error(j.error||('HTTP '+r.status));
+        document.getElementById('pairIdle').classList.add('hidden');
+        document.getElementById('pairWait').classList.remove('hidden');
+        document.getElementById('pairCode').textContent=j.code;
+        pollPairing(j.pairingId);
+      }catch(e){btn.disabled=false;err.textContent=e.message||String(e)}
+    }
+
+    async function pollPairing(id){
+      const state=document.getElementById('pairState');
+      while(true){
+        await new Promise(r=>setTimeout(r,1800));
+        try{
+          const r=await fetch(portalApi+'/pair/status?id='+encodeURIComponent(id),{cache:'no-store'});
+          const j=await r.json();
+          if(!r.ok||!j.ok)throw new Error(j.error||('HTTP '+r.status));
+          if(j.status==='claimed'&&/^[0-9a-f]{64}$/i.test(j.token||'')){
+            localStorage.setItem(portalKey,String(j.token).toLowerCase());
+            state.textContent='Готово. Открываю портал…';
+            await loadHome();
+            return;
+          }
+          if(j.status==='approved')state.textContent='Подтверждено · создаю доступ…';
+          else if(j.status==='expired'){state.textContent='Код истёк. Обнови страницу и создай новый.';return}
+        }catch(e){state.textContent='Ошибка проверки: '+(e.message||String(e));return}
+      }
+    }
+
+    async function loadHome(){
+      const token=localStorage.getItem(portalKey)||'';
+      if(!/^[0-9a-f]{64}$/i.test(token)){renderPair();return}
+      let r,j;
+      try{
+        r=await fetch(portalApi+'/home',{headers:{'x-review-portal-token':token},cache:'no-store'});
+        j=await r.json();
+      }catch(e){app.innerHTML='<div class="boot bad">Не удалось открыть портал: '+esc(e.message||String(e))+'</div>';return}
+      if(r.status===401){localStorage.removeItem(portalKey);renderPair();return}
+      if(!r.ok||!j.ok){app.innerHTML='<div class="boot bad">Ошибка портала: '+esc(j.error||('HTTP '+r.status))+'</div>';return}
+
+      const sessions=Array.isArray(j.sessions)?j.sessions:[];
+      const latest=sessions[0]||null;
+      const analyticsHref=latest?('?session='+encodeURIComponent(latest.id)+'&portal=1&mode=analytics'):'#';
+      app.innerHTML='<div class="portal"><div class="top"><div><div class="brand">AI NEWS BY CARNI · REVIEW</div><div class="sub">Постоянный внутренний вход · '+esc(j.device?.name||'этот браузер')+'</div></div><button class="btn" id="disconnect">Отвязать браузер</button></div><div class="hero card"><div><h1>Панель управления</h1><div class="sub">Analytics и последние ревью теперь доступны без Telegram-ссылки.</div></div><button class="btn green" id="openAnalytics" '+(latest?'':'disabled')+'>Открыть Analytics</button></div><div class="card"><b>Последние ревью</b><div class="sessions">'+(sessions.length?sessions.map(s=>'<div class="session"><div><div class="sessionTitle">'+esc(s.shortId||s.id)+' <span class="status">'+esc(statusName(s.status))+'</span></div><div class="sessionMeta">'+esc(s.reportDate||'')+' · revision '+esc(s.revisionNo||'—')+(s.approvedAt?' · одобрено':'')+'</div></div><button class="btn" data-open-session="'+esc(s.id)+'">Открыть</button></div>').join(''):'<div class="muted" style="margin-top:12px">Ревью пока нет.</div>')+'</div></div></div>';
+      document.getElementById('disconnect').onclick=()=>{if(confirm('Отвязать этот браузер от внутреннего Reviewer?')){localStorage.removeItem(portalKey);location.href=location.pathname}};
+      if(latest)document.getElementById('openAnalytics').onclick=()=>location.href=analyticsHref;
+      document.querySelectorAll('[data-open-session]').forEach(n=>n.onclick=()=>{location.href='?session='+encodeURIComponent(n.dataset.openSession)+'&portal=1'});
+    }
+
+    try{
+      const query=new URLSearchParams(location.search);
+      if(query.get('session'))await openSession(query);
+      else await loadHome();
     }catch(error){
-      status.className='bad';
-      status.textContent=error instanceof Error?error.message:String(error);
+      app.innerHTML='<div class="boot"><b>AI NEWS BY CARNI · REVIEW</b><p class="bad">'+esc(error instanceof Error?error.message:String(error))+'</p><p><a class="btn" href="'+location.pathname+'">На главную</a></p></div>';
     }
   })();
   </script>
