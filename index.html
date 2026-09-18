@@ -15,7 +15,9 @@
     .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}.hero{display:grid;grid-template-columns:1fr auto;gap:16px;align-items:center;margin-bottom:12px}.hero h1{font-size:22px;margin:0 0 6px}.btn{border:1px solid #315276;background:#10223a;color:#eef7ff;border-radius:10px;padding:9px 13px;cursor:pointer;font-weight:800}.btn:hover{border-color:var(--cyan)}.btn.primary{background:#123b55;border-color:#2b83b7}.btn.green{border-color:#347d67;background:#10352e}.btn:disabled{opacity:.55;cursor:default}
     .pair{max-width:560px;margin:14vh auto 0;text-align:center}.pairCode{font-size:48px;letter-spacing:.16em;font-weight:950;margin:18px 0;color:#fff}.pairHint{line-height:1.55;color:var(--muted)}.hidden{display:none!important}
     .sessions{display:grid;gap:8px;margin-top:12px}.session{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px;border:1px solid #1e354f;border-radius:11px;background:#091421}.sessionTitle{font-weight:850;overflow-wrap:anywhere}.sessionMeta{font-size:12px;color:var(--muted);margin-top:4px}.status{display:inline-block;border:1px solid #35516f;border-radius:999px;padding:2px 7px;margin-left:6px;font-size:11px;color:#bdd0e5}
-    @media(max-width:650px){.hero,.session{grid-template-columns:1fr}.top{align-items:flex-start;flex-direction:column}.pairCode{font-size:38px}}
+    .analytics{display:grid;gap:12px}.analyticsKpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}.kpi{background:#091421;border:1px solid #1e354f;border-radius:12px;padding:13px}.kpiValue{font-size:24px;font-weight:950}.kpiLabel{font-size:11px;color:var(--muted);margin-top:5px}.ageBtns{display:flex;gap:7px;flex-wrap:wrap;margin:10px 0 14px}.ageBtn{border:1px solid #315276;background:#10223a;color:#d7e4f2;border-radius:9px;padding:7px 11px;cursor:pointer;font-weight:850}.ageBtn.active{border-color:var(--cyan);color:#fff}.bars{display:grid;gap:8px}.barRow{display:grid;grid-template-columns:minmax(160px,300px) minmax(150px,1fr) 90px;gap:10px;align-items:center}.barName{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.barTrack{height:18px;background:#06101c;border:1px solid #1e354f;border-radius:999px;overflow:hidden}.barFill{height:100%;background:linear-gradient(90deg,#258bcf,#62d8ff)}.barValue{text-align:right;font-weight:900}.tableWrap{overflow:auto;border:1px solid #1e354f;border-radius:10px}.analyticsTable{width:100%;border-collapse:collapse;min-width:780px}.analyticsTable th,.analyticsTable td{padding:8px 9px;border-bottom:1px solid #1c3048;text-align:right;font-size:12px;white-space:nowrap}.analyticsTable th{background:#0c192a;color:#9fb1c7}.analyticsTable th:first-child,.analyticsTable td:first-child{text-align:left;white-space:normal;min-width:220px}.signals{display:grid;gap:8px}.signal{border:1px solid #29425f;border-radius:10px;padding:10px 12px;background:#091522;font-size:13px;line-height:1.45}.signal.warn{border-color:#6a5124}.signal.good{border-color:#245b49}
+    @media(max-width:900px){.analyticsKpis{grid-template-columns:repeat(2,minmax(0,1fr))}.barRow{grid-template-columns:minmax(110px,180px) 1fr 70px}}
+    @media(max-width:650px){.hero,.session{grid-template-columns:1fr}.top{align-items:flex-start;flex-direction:column}.pairCode{font-size:38px}.analyticsKpis{grid-template-columns:1fr 1fr}.barRow{grid-template-columns:1fr}.barValue{text-align:left}.barName{white-space:normal}}
   </style>
 </head>
 <body>
@@ -123,6 +125,76 @@
       }
     }
 
+    const aInt=v=>v===null||v===undefined?'ещё нет':Math.round(Number(v)).toLocaleString('ru-RU');
+    const aOne=v=>v===null||v===undefined?'ждём':Number(v).toFixed(1);
+    const aPct=v=>v===null||v===undefined?'ждём':Number(v).toFixed(1)+'%';
+    const aAge=v=>{if(v===null||v===undefined)return'—';const n=Number(v);return n<24?n.toFixed(1)+' ч':(n/24).toFixed(1)+' д'};
+    const aSlot=v=>({morning:'утро',day:'день',evening:'вечер',night:'ночь'})[String(v||'')]||'—';
+    const aDate=v=>{if(!v)return'—';try{return new Date(v).toLocaleString('ru-RU',{timeZone:'Asia/Aqtobe',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}catch{return String(v)}};
+
+    async function portalGet(path){
+      const token=localStorage.getItem(portalKey)||'';
+      if(!/^[0-9a-f]{64}$/i.test(token)) throw new Error('Браузер не привязан');
+      const r=await fetch(portalApi+path,{headers:{'x-review-portal-token':token},cache:'no-store'});
+      const j=await r.json().catch(()=>({}));
+      if(r.status===401){localStorage.removeItem(portalKey);throw new Error('Доступ браузера истёк')}
+      if(!r.ok||!j.ok)throw new Error(j.error||('HTTP '+r.status));
+      return j;
+    }
+
+    function analyticsName(data,videoId,shortId){
+      const v=(data.videos||[]).find(x=>x.videoId===videoId);
+      return String(v?.title||shortId||videoId||'Short');
+    }
+
+    function renderAnalytics(data,selectedAge){
+      const o=data.overview||{},ch=data.channel||{},count=Number(o.trackedPublicShorts||0),ret=Number(o.processedRetentionVideos||0);
+      const rows=(data.milestones||[]).filter(x=>Number(x.milestoneHours)===selectedAge&&x.views!==null).sort((a,b)=>Number(b.views)-Number(a.views));
+      const max=Math.max(...rows.map(x=>Number(x.views||0)),1);
+      const map=new Map();
+      for(const r of data.milestones||[]){if(!map.has(r.videoId))map.set(r.videoId,{});map.get(r.videoId)[r.milestoneHours]=r}
+      const ids=[...new Set((data.milestones||[]).map(x=>x.videoId))];
+
+      const signals=[];
+      if(count<8)signals.push({c:'warn',t:'Выборка пока маленькая',d:'Сейчас отслеживается '+count+' реальных Shorts. Это ранние сигналы, а не устойчивые правила.'});
+      if(ret<count)signals.push({c:'warn',t:'Retention ещё дозревает',d:'Глубокие метрики доступны для '+ret+' из '+count+' роликов. YouTube Analytics приходит с задержкой.'});
+      const r24=(data.milestones||[]).filter(x=>Number(x.milestoneHours)===24&&x.views!==null).sort((a,b)=>Number(a.views)-Number(b.views));
+      if(r24.length>=2)signals.push({c:'good',t:'24-часовые срезы уже сравнимы',d:'Диапазон сейчас '+aInt(r24[0].views)+'–'+aInt(r24[r24.length-1].views)+' просмотров. Причину разницы пока не приписываем одному фактору.'});
+      if(!signals.length)signals.push({c:'good',t:'База уже пригодна для наблюдений',d:'Можно искать повторяющиеся паттерны, но не объявлять причинность без дополнительной проверки.'});
+
+      app.innerHTML='<div class="portal analytics"><div class="top"><div><div class="brand">AI NEWS BY CARNI · ANALYTICS</div><div class="sub">Сравнение Shorts по одинаковому возрасту · сбор каждые '+esc(data.source?.collectorCadenceHours||6)+'ч</div></div><button class="btn" id="analyticsHome">На главную</button></div>'+
+      '<div class="analyticsKpis">'+[
+        ['Подписчики',aInt(ch.subscribers)],
+        ['Публичные Shorts',aInt(count)],
+        ['Просмотры Shorts',aInt(o.currentViews)],
+        ['Retention',ret+' / '+count],
+        ['Снимок',aDate(data.source?.latestSnapshotAt)]
+      ].map(x=>'<div class="kpi"><div class="kpiValue">'+esc(x[1])+'</div><div class="kpiLabel">'+esc(x[0])+'</div></div>').join('')+'</div>'+
+      '<section class="card"><b>Сравнение по одинаковому возрасту</b><div class="ageBtns">'+[6,24,72,168].map(h=>'<button class="ageBtn '+(h===selectedAge?'active':'')+'" data-age="'+h+'">'+h+'ч</button>').join('')+'</div><div class="bars">'+(rows.length?rows.map(r=>'<div class="barRow"><div class="barName" title="'+esc(analyticsName(data,r.videoId,r.shortId))+'">'+esc(analyticsName(data,r.videoId,r.shortId))+'</div><div class="barTrack"><div class="barFill" style="width:'+Math.max(2,Math.round(Number(r.views||0)/max*100))+'%"></div></div><div class="barValue">'+aInt(r.views)+'</div></div>').join(''):'<div class="muted">Для '+selectedAge+'ч ещё нет зрелых срезов.</div>')+'</div></section>'+
+      '<section class="card"><b>Возрастные срезы · просмотры</b><div class="tableWrap" style="margin-top:10px"><table class="analyticsTable"><thead><tr><th>Short</th><th>6ч</th><th>24ч</th><th>72ч</th><th>168ч</th></tr></thead><tbody>'+(
+        ids.length?ids.map(id=>{const rs=map.get(id)||{},sample=Object.values(rs)[0]||{};return '<tr><td>'+esc(analyticsName(data,id,sample.shortId))+'</td>'+[6,24,72,168].map(h=>'<td>'+aInt(rs[h]?.views)+'</td>').join('')+'</tr>'}).join(''):'<tr><td colspan="5" class="muted">Срезов пока нет.</td></tr>'
+      )+'</tbody></table></div></section>'+
+      '<section class="card"><b>Текущее состояние Shorts</b><div class="tableWrap" style="margin-top:10px"><table class="analyticsTable"><thead><tr><th>Short</th><th>Возраст</th><th>Просмотры</th><th>Скорость</th><th>Avg %</th><th>Avg sec</th><th>Лайки</th><th>Публикация</th></tr></thead><tbody>'+(
+        (data.videos||[]).length?(data.videos||[]).map(r=>'<tr><td><b>'+esc(r.title||r.shortId)+'</b><div class="muted">'+esc(r.storyShape||'')+(r.template?' · '+esc(r.template):'')+'</div></td><td>'+aAge(r.ageHours)+'</td><td><b>'+aInt(r.views)+'</b></td><td>'+((r.viewsPerHour===null||r.viewsPerHour===undefined)?'ждём':aOne(r.viewsPerHour)+'/ч')+'</td><td>'+aPct(r.averageViewPercentage)+'</td><td>'+((r.averageViewDuration===null||r.averageViewDuration===undefined)?'ждём':aOne(r.averageViewDuration)+'с')+'</td><td>'+aInt(r.likes)+'</td><td>'+esc((r.publicationLocalLabel||'—')+' · '+aSlot(r.publicationSlot))+'</td></tr>').join(''):'<tr><td colspan="8" class="muted">Опубликованных Shorts пока нет.</td></tr>'
+      )+'</tbody></table></div></section>'+
+      '<section class="card"><b>Что реально видно из данных</b><div class="signals" style="margin-top:10px">'+signals.map(s=>'<div class="signal '+s.c+'"><b>'+esc(s.t)+'</b><br>'+esc(s.d)+'</div>').join('')+'</div></section></div>';
+
+      document.getElementById('analyticsHome').onclick=()=>location.href=location.pathname;
+      document.querySelectorAll('[data-age]').forEach(n=>n.onclick=()=>renderAnalytics(data,Number(n.dataset.age)));
+    }
+
+    async function loadAnalytics(){
+      app.innerHTML='<div class="boot"><b>AI NEWS BY CARNI · ANALYTICS</b><p class="muted">Загружаю данные…</p></div>';
+      try{
+        const data=await portalGet('/analytics');
+        renderAnalytics(data,24);
+      }catch(e){
+        if(String(e.message||e).includes('не привязан')||String(e.message||e).includes('истёк')){location.href=location.pathname;return}
+        app.innerHTML='<div class="boot"><b>AI NEWS BY CARNI · ANALYTICS</b><p class="bad">'+esc(e.message||String(e))+'</p><p><button class="btn" id="analyticsBack">На главную</button></p></div>';
+        document.getElementById('analyticsBack').onclick=()=>location.href=location.pathname;
+      }
+    }
+
     async function loadHome(){
       const token=localStorage.getItem(portalKey)||'';
       if(!/^[0-9a-f]{64}$/i.test(token)){
@@ -149,16 +221,17 @@
 
       const sessions=Array.isArray(j.sessions)?j.sessions:[];
       const latest=sessions[0]||null;
-      const analyticsHref=latest?('?session='+encodeURIComponent(latest.id)+'&portal=1&mode=analytics'):'#';
-      app.innerHTML='<div class="portal"><div class="top"><div><div class="brand">AI NEWS BY CARNI · REVIEW</div><div class="sub">Постоянный внутренний вход · '+esc(j.device?.name||'этот браузер')+'</div></div><button class="btn" id="disconnect">Отвязать браузер</button></div><div class="hero card"><div><h1>Панель управления</h1><div class="sub">Analytics и последние ревью теперь доступны без Telegram-ссылки.</div></div><button class="btn green" id="openAnalytics" '+(latest?'':'disabled')+'>Открыть Analytics</button></div><div class="card"><b>Последние ревью</b><div class="sessions">'+(sessions.length?sessions.map(s=>'<div class="session"><div><div class="sessionTitle">'+esc(s.shortId||s.id)+' <span class="status">'+esc(statusName(s.status))+'</span></div><div class="sessionMeta">'+esc(s.reportDate||'')+' · revision '+esc(s.revisionNo||'—')+(s.approvedAt?' · одобрено':'')+'</div></div><button class="btn" data-open-session="'+esc(s.id)+'">Открыть</button></div>').join(''):'<div class="muted" style="margin-top:12px">Ревью пока нет.</div>')+'</div></div></div>';
+      const analyticsHref='?view=analytics';
+      app.innerHTML='<div class="portal"><div class="top"><div><div class="brand">AI NEWS BY CARNI · REVIEW</div><div class="sub">Постоянный внутренний вход · '+esc(j.device?.name||'этот браузер')+'</div></div><button class="btn" id="disconnect">Отвязать браузер</button></div><div class="hero card"><div><h1>Панель управления</h1><div class="sub">Analytics и последние ревью теперь доступны без Telegram-ссылки.</div></div><button class="btn green" id="openAnalytics">Открыть Analytics</button></div><div class="card"><b>Последние ревью</b><div class="sessions">'+(sessions.length?sessions.map(s=>'<div class="session"><div><div class="sessionTitle">'+esc(s.shortId||s.id)+' <span class="status">'+esc(statusName(s.status))+'</span></div><div class="sessionMeta">'+esc(s.reportDate||'')+' · revision '+esc(s.revisionNo||'—')+(s.approvedAt?' · одобрено':'')+'</div></div><button class="btn" data-open-session="'+esc(s.id)+'">Открыть</button></div>').join(''):'<div class="muted" style="margin-top:12px">Ревью пока нет.</div>')+'</div></div></div>';
       document.getElementById('disconnect').onclick=()=>{if(confirm('Отвязать этот браузер от внутреннего Reviewer?')){localStorage.removeItem(portalKey);localStorage.removeItem(pairingIdKey);localStorage.removeItem(pairingCodeKey);location.href=location.pathname}};
-      if(latest)document.getElementById('openAnalytics').onclick=()=>location.href=analyticsHref;
+      document.getElementById('openAnalytics').onclick=()=>location.href=analyticsHref;
       document.querySelectorAll('[data-open-session]').forEach(n=>n.onclick=()=>{location.href='?session='+encodeURIComponent(n.dataset.openSession)+'&portal=1'});
     }
 
     try{
       const query=new URLSearchParams(location.search);
-      if(query.get('session'))await openSession(query);
+      if(query.get('view')==='analytics')await loadAnalytics();
+      else if(query.get('session'))await openSession(query);
       else await loadHome();
     }catch(error){
       app.innerHTML='<div class="boot"><b>AI NEWS BY CARNI · REVIEW</b><p class="bad">'+esc(error instanceof Error?error.message:String(error))+'</p><p><a class="btn" href="'+location.pathname+'">На главную</a></p></div>';
