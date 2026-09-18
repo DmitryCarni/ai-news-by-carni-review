@@ -26,6 +26,8 @@
     const gateway=SUPABASE+'/shorts-storyboard-api';
     const portalApi=SUPABASE+'/shorts-review-portal';
     const portalKey='carniReviewPortalToken';
+    const pairingIdKey='carniReviewPairingId';
+    const pairingCodeKey='carniReviewPairingCode';
     const app=document.getElementById('app');
     const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     const statusName=s=>({editing:'редактирование',approved:'одобрено',preview_ready:'preview готов',preview_requested:'preview в очереди',preview_claimed:'рендерится'})[String(s||'')]||String(s||'—');
@@ -90,6 +92,8 @@
         const r=await fetch(portalApi+'/pair/start',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({deviceName:'Vivaldi · review.carni.ltd'})});
         const j=await r.json();
         if(!r.ok||!j.ok)throw new Error(j.error||('HTTP '+r.status));
+        localStorage.setItem(pairingIdKey,String(j.pairingId));
+        localStorage.setItem(pairingCodeKey,String(j.code));
         document.getElementById('pairIdle').classList.add('hidden');
         document.getElementById('pairWait').classList.remove('hidden');
         document.getElementById('pairCode').textContent=j.code;
@@ -107,19 +111,34 @@
           if(!r.ok||!j.ok)throw new Error(j.error||('HTTP '+r.status));
           if(j.status==='claimed'&&/^[0-9a-f]{64}$/i.test(j.token||'')){
             localStorage.setItem(portalKey,String(j.token).toLowerCase());
+            localStorage.removeItem(pairingIdKey);
+            localStorage.removeItem(pairingCodeKey);
             state.textContent='Готово. Открываю портал…';
             await loadHome();
             return;
           }
           if(j.status==='approved')state.textContent='Подтверждено · создаю доступ…';
-          else if(j.status==='expired'){state.textContent='Код истёк. Обнови страницу и создай новый.';return}
+          else if(j.status==='expired'){localStorage.removeItem(pairingIdKey);localStorage.removeItem(pairingCodeKey);state.textContent='Код истёк. Нажми «Привязать этот браузер» ещё раз.';return}
         }catch(e){state.textContent='Ошибка проверки: '+(e.message||String(e));return}
       }
     }
 
     async function loadHome(){
       const token=localStorage.getItem(portalKey)||'';
-      if(!/^[0-9a-f]{64}$/i.test(token)){renderPair();return}
+      if(!/^[0-9a-f]{64}$/i.test(token)){
+        const pairingId=localStorage.getItem(pairingIdKey)||'';
+        const pairingCode=localStorage.getItem(pairingCodeKey)||'';
+        if(/^[0-9a-f-]{36}$/i.test(pairingId)){
+          renderPair();
+          document.getElementById('pairIdle').classList.add('hidden');
+          document.getElementById('pairWait').classList.remove('hidden');
+          document.getElementById('pairCode').textContent=/^[0-9]{6}$/.test(pairingCode)?pairingCode:'••••••';
+          document.getElementById('pairState').textContent='Продолжаю уже начатую привязку…';
+          pollPairing(pairingId);
+          return;
+        }
+        renderPair();return
+      }
       let r,j;
       try{
         r=await fetch(portalApi+'/home',{headers:{'x-review-portal-token':token},cache:'no-store'});
@@ -132,7 +151,7 @@
       const latest=sessions[0]||null;
       const analyticsHref=latest?('?session='+encodeURIComponent(latest.id)+'&portal=1&mode=analytics'):'#';
       app.innerHTML='<div class="portal"><div class="top"><div><div class="brand">AI NEWS BY CARNI · REVIEW</div><div class="sub">Постоянный внутренний вход · '+esc(j.device?.name||'этот браузер')+'</div></div><button class="btn" id="disconnect">Отвязать браузер</button></div><div class="hero card"><div><h1>Панель управления</h1><div class="sub">Analytics и последние ревью теперь доступны без Telegram-ссылки.</div></div><button class="btn green" id="openAnalytics" '+(latest?'':'disabled')+'>Открыть Analytics</button></div><div class="card"><b>Последние ревью</b><div class="sessions">'+(sessions.length?sessions.map(s=>'<div class="session"><div><div class="sessionTitle">'+esc(s.shortId||s.id)+' <span class="status">'+esc(statusName(s.status))+'</span></div><div class="sessionMeta">'+esc(s.reportDate||'')+' · revision '+esc(s.revisionNo||'—')+(s.approvedAt?' · одобрено':'')+'</div></div><button class="btn" data-open-session="'+esc(s.id)+'">Открыть</button></div>').join(''):'<div class="muted" style="margin-top:12px">Ревью пока нет.</div>')+'</div></div></div>';
-      document.getElementById('disconnect').onclick=()=>{if(confirm('Отвязать этот браузер от внутреннего Reviewer?')){localStorage.removeItem(portalKey);location.href=location.pathname}};
+      document.getElementById('disconnect').onclick=()=>{if(confirm('Отвязать этот браузер от внутреннего Reviewer?')){localStorage.removeItem(portalKey);localStorage.removeItem(pairingIdKey);localStorage.removeItem(pairingCodeKey);location.href=location.pathname}};
       if(latest)document.getElementById('openAnalytics').onclick=()=>location.href=analyticsHref;
       document.querySelectorAll('[data-open-session]').forEach(n=>n.onclick=()=>{location.href='?session='+encodeURIComponent(n.dataset.openSession)+'&portal=1'});
     }
