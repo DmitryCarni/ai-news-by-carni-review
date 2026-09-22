@@ -14,10 +14,10 @@
     .portal{max-width:1050px;margin:0 auto;padding:24px 16px 60px}.top{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:18px}.brand{font-size:18px;font-weight:900}.sub{color:var(--muted);font-size:13px;margin-top:4px}
     .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}.hero{display:grid;grid-template-columns:1fr auto;gap:16px;align-items:center;margin-bottom:12px}.hero h1{font-size:22px;margin:0 0 6px}.btn{border:1px solid #315276;background:#10223a;color:#eef7ff;border-radius:10px;padding:9px 13px;cursor:pointer;font-weight:800}.btn:hover{border-color:var(--cyan)}.btn.primary{background:#123b55;border-color:#2b83b7}.btn.green{border-color:#347d67;background:#10352e}.btn:disabled{opacity:.55;cursor:default}
     .pair{max-width:560px;margin:14vh auto 0;text-align:center}.pairCode{font-size:48px;letter-spacing:.16em;font-weight:950;margin:18px 0;color:#fff}.pairHint{line-height:1.55;color:var(--muted)}.hidden{display:none!important}
-    .sessions,.queue{display:grid;gap:8px;margin-top:12px}.session,.queueItem{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px;border:1px solid #1e354f;border-radius:11px;background:#091421}.sessionTitle,.queueTitle{font-weight:850;overflow-wrap:anywhere}.sessionMeta,.queueMeta{font-size:12px;color:var(--muted);margin-top:4px}.status{display:inline-block;border:1px solid #35516f;border-radius:999px;padding:2px 7px;margin-left:6px;font-size:11px;color:#bdd0e5}.queueItem.human{border-color:#426f93;background:#0a1827}.queueStage{display:inline-block;border:1px solid #35516f;border-radius:999px;padding:3px 8px;font-size:11px;color:#bdd0e5}.queueItem.human .queueStage{border-color:#3a8bc1;color:#e8f8ff}.queueAction{display:flex;gap:7px;align-items:center;justify-content:flex-end}.queueHint{font-size:11px;color:var(--muted);white-space:nowrap}
+    .queue{display:grid;gap:10px;margin-top:12px}.queueItem{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px;align-items:center;padding:15px;border:1px solid #29445f;border-radius:12px;background:#091421}.queueTitle{font-size:16px;font-weight:900;line-height:1.25}.queueMeta{font-size:12px;color:var(--muted);margin-top:6px}.queueStage{display:inline-block;border:1px solid #35516f;border-radius:999px;padding:3px 8px;font-size:11px;color:#bdd0e5;margin-left:6px}.queueItem.human{border-color:#3a8bc1;background:#0a1827}.queueItem.human .queueStage{color:#fff}.queueAction{display:flex;gap:7px;align-items:center;justify-content:flex-end}.queueHint{font-size:11px;color:var(--muted);white-space:nowrap}.quiet{color:var(--muted);font-size:12px}.doneLine{padding:10px 2px 0;color:var(--muted);font-size:12px}.archive{margin-top:14px}.archive summary{cursor:pointer;color:var(--muted);font-size:12px}.archive .queue{margin-top:10px}.archive .queueItem{padding:10px 12px;opacity:.82}.archive .queueTitle{font-size:13px}
     .analytics{display:grid;gap:12px}.analyticsKpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}.kpi{background:#091421;border:1px solid #1e354f;border-radius:12px;padding:13px}.kpiValue{font-size:24px;font-weight:950}.kpiLabel{font-size:11px;color:var(--muted);margin-top:5px}.ageBtns{display:flex;gap:7px;flex-wrap:wrap;margin:10px 0 14px}.ageBtn{border:1px solid #315276;background:#10223a;color:#d7e4f2;border-radius:9px;padding:7px 11px;cursor:pointer;font-weight:850}.ageBtn.active{border-color:var(--cyan);color:#fff}.bars{display:grid;gap:8px}.barRow{display:grid;grid-template-columns:minmax(160px,300px) minmax(150px,1fr) 90px;gap:10px;align-items:center}.barName{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.barTrack{height:18px;background:#06101c;border:1px solid #1e354f;border-radius:999px;overflow:hidden}.barFill{height:100%;background:linear-gradient(90deg,#258bcf,#62d8ff)}.barValue{text-align:right;font-weight:900}.tableWrap{overflow:auto;border:1px solid #1e354f;border-radius:10px}.analyticsTable{width:100%;border-collapse:collapse;min-width:780px}.analyticsTable th,.analyticsTable td{padding:8px 9px;border-bottom:1px solid #1c3048;text-align:right;font-size:12px;white-space:nowrap}.analyticsTable th{background:#0c192a;color:#9fb1c7}.analyticsTable th:first-child,.analyticsTable td:first-child{text-align:left;white-space:normal;min-width:220px}.signals{display:grid;gap:8px}.signal{border:1px solid #29425f;border-radius:10px;padding:10px 12px;background:#091522;font-size:13px;line-height:1.45}.signal.warn{border-color:#6a5124}.signal.good{border-color:#245b49}
     @media(max-width:900px){.analyticsKpis{grid-template-columns:repeat(2,minmax(0,1fr))}.barRow{grid-template-columns:minmax(110px,180px) 1fr 70px}}
-    @media(max-width:650px){.hero,.session,.queueItem{grid-template-columns:1fr}.top{align-items:flex-start;flex-direction:column}.pairCode{font-size:38px}.analyticsKpis{grid-template-columns:1fr 1fr}.barRow{grid-template-columns:1fr}.barValue{text-align:left}.barName{white-space:normal}}
+    @media(max-width:650px){.hero,.queueItem{grid-template-columns:1fr}.top{align-items:flex-start;flex-direction:column}.pairCode{font-size:38px}.analyticsKpis{grid-template-columns:1fr 1fr}.barRow{grid-template-columns:1fr}.barValue{text-align:left}.barName{white-space:normal}}
   </style>
 </head>
 <body>
@@ -34,10 +34,11 @@
     const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     const statusName=s=>({editing:'редактирование',approved:'одобрено',preview_ready:'preview готов',preview_requested:'preview в очереди',preview_claimed:'рендерится'})[String(s||'')]||String(s||'—');
     const queueActionHtml=q=>{
-      if(q.action==='storyboard'&&q.sessionId)return '<button class="btn" data-open-session="'+esc(q.sessionId)+'">Открыть Ревьюер</button>';
-      if(q.action==='text'||q.action==='video')return '<div class="queueHint">решение пока через Telegram</div>';
+      if(q.action==='storyboard'&&q.sessionId)return '<button class="btn primary" data-open-session="'+esc(q.sessionId)+'">Открыть</button>';
+      if(q.action==='text'||q.action==='video')return '<div class="queueHint">Telegram</div>';
       return '';
     };
+    const queueCard=q=>'<div class="queueItem '+(q.needsHuman?'human':'')+'"><div><div class="queueTitle">'+esc(q.title||q.shortId||'Short')+' <span class="queueStage">'+esc(q.stageLabel||q.stage||'—')+'</span></div><div class="queueMeta">'+esc(q.reportDate||'')+(q.videoReviewId?' · VID-'+String(q.videoReviewId).padStart(4,'0'):'')+'</div></div><div class="queueAction">'+queueActionHtml(q)+'</div></div>';
 
     async function openSession(query){
       const session=(query.get('session')||'').trim().toLowerCase();
@@ -224,10 +225,26 @@
       if(r.status===401){localStorage.removeItem(portalKey);renderPair();return}
       if(!r.ok||!j.ok){app.innerHTML='<div class="boot bad">Ошибка портала: '+esc(j.error||('HTTP '+r.status))+'</div>';return}
 
-      const sessions=Array.isArray(j.sessions)?j.sessions:[];
       const queue=Array.isArray(j.queue)?j.queue:[];
       const analyticsHref='?view=analytics';
-      app.innerHTML='<div class="portal"><div class="top"><div><div class="brand">AI NEWS BY CARNI · REVIEW</div><div class="sub">Постоянный внутренний вход · '+esc(j.device?.name||'этот браузер')+'</div></div><button class="btn" id="disconnect">Отвязать браузер</button></div><div class="hero card"><div><h1>Панель управления</h1><div class="sub">Единая очередь Shorts уже видна здесь. Telegram пока остаётся рабочим каналом решений для текста и видео.</div></div><button class="btn green" id="openAnalytics">Открыть Analytics</button></div><div class="card"><b>Очередь производства</b><div class="sub">Одна строка = текущая каноническая стадия Short. На этом этапе очередь только читает состояние и ничего не меняет.</div><div class="queue">'+(queue.length?queue.map(q=>'<div class="queueItem '+(q.needsHuman?'human':'')+'"><div><div class="queueTitle">'+esc(q.shortId||'Short')+' <span class="queueStage">'+esc(q.stageLabel||q.stage||'—')+'</span></div><div class="queueMeta">'+esc(q.reportDate||'')+' · REV-'+String(q.textReviewId||0).padStart(4,'0')+(q.videoReviewId?' · VID-'+String(q.videoReviewId).padStart(4,'0'):'')+(q.needsHuman?' · нужно решение':' · автоматика / готово')+'</div></div><div class="queueAction">'+queueActionHtml(q)+'</div></div>').join(''):'<div class="muted" style="margin-top:12px">Очередь пуста.</div>')+'</div></div><div class="card" style="margin-top:12px"><b>Storyboard-сессии</b><div class="sessions">'+(sessions.length?sessions.map(s=>'<div class="session"><div><div class="sessionTitle">'+esc(s.shortId||s.id)+' <span class="status">'+esc(statusName(s.status))+'</span></div><div class="sessionMeta">'+esc(s.reportDate||'')+' · revision '+esc(s.revisionNo||'—')+(s.approvedAt?' · одобрено':'')+'</div></div><button class="btn" data-open-session="'+esc(s.id)+'">Открыть</button></div>').join(''):'<div class="muted" style="margin-top:12px">Ревью пока нет.</div>')+'</div></div></div>';
+      const now=Date.now();
+      const ageHours=q=>Math.max(0,(now-new Date(q.updatedAt||0).getTime())/3600000);
+      const terminal=new Set(['published','video_rejected','text_rejected']);
+      const current=queue.filter(q=>{
+        if(q.needsHuman&&q.stage==='pending_text'&&ageHours(q)>72)return false;
+        return !terminal.has(String(q.stage||''));
+      });
+      const recentDone=queue.find(q=>q.stage==='published')||null;
+      const hidden=queue.filter(q=>!current.includes(q)).slice(0,12);
+
+      app.innerHTML='<div class="portal"><div class="top"><div><div class="brand">AI NEWS BY CARNI · REVIEW</div><div class="sub">Контрольный центр Shorts</div></div><div style="display:flex;gap:8px"><button class="btn green" id="openAnalytics">Analytics</button><button class="btn" id="disconnect">⋯</button></div></div>'+
+      '<div class="card"><b>Сейчас</b><div class="sub">Только то, что требует решения или ещё не закончено.</div><div class="queue">'+(
+        current.length?current.map(queueCard).join(''):'<div class="quiet">Ничего не ждёт твоего решения.</div>'
+      )+'</div>'+(
+        recentDone?'<div class="doneLine">Последний выпуск · '+esc(recentDone.title||recentDone.shortId)+' · опубликован</div>':''
+      )+'</div>'+(
+        hidden.length?'<details class="archive"><summary>Показать старые и завершённые · '+hidden.length+'</summary><div class="queue">'+hidden.map(queueCard).join('')+'</div></details>':''
+      )+'</div>';
       document.getElementById('disconnect').onclick=()=>{if(confirm('Отвязать этот браузер от внутреннего Reviewer?')){localStorage.removeItem(portalKey);localStorage.removeItem(pairingIdKey);localStorage.removeItem(pairingCodeKey);location.href=location.pathname}};
       document.getElementById('openAnalytics').onclick=()=>location.href=analyticsHref;
       document.querySelectorAll('[data-open-session]').forEach(n=>n.onclick=()=>{location.href='?session='+encodeURIComponent(n.dataset.openSession)+'&portal=1'});
