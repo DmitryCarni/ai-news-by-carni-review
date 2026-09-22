@@ -231,7 +231,7 @@
       const ageHours=q=>Math.max(0,(now-new Date(q.updatedAt||0).getTime())/3600000);
       const terminal=new Set(['published','video_rejected','text_rejected']);
       const current=queue.filter(q=>{
-        if(q.needsHuman&&ageHours(q)>72)return false;
+        if(ageHours(q)>72)return false;
         return !terminal.has(String(q.stage||''));
       });
       const recentDone=queue.find(q=>q.stage==='published')||null;
