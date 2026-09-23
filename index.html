@@ -42,7 +42,7 @@
       return '';
     };
     const slotBadge=q=>q.publicationSlot?'<span class="slotBadge '+(q.publicationSlot==='evening'?'evening':'')+'">'+(q.publicationSlot==='evening'?'Вечер':'День')+'</span>':'';
-    const queueCard=q=>'<div class="queueItem '+(q.needsHuman?'human':'')+'"><div><div class="queueTitle">'+esc(q.title||q.shortId||'Short')+slotBadge(q)+' <span class="queueStage">'+esc(q.stageLabel||q.stage||'—')+'</span></div><div class="queueMeta">'+esc(q.reportDate||'')+(q.videoReviewId?' · VID-'+String(q.videoReviewId).padStart(4,'0'):'')+'</div></div><div class="queueAction">'+queueActionHtml(q)+'</div></div>';
+    const queueCard=q=>'<div class="queueItem '+(q.needsHuman?'human':'')+'"><div><div class="queueTitle">'+esc(q.title||q.shortId||'Short')+slotBadge(q)+' <span class="queueStage">'+esc(q.stageLabel||q.stage||'—')+'</span></div><div class="queueMeta">'+esc(q.reportDate||'')+(q.videoReviewId?' · VID-'+String(q.videoReviewId).padStart(4,'0'):(q.textReviewId?' · TXT-'+String(q.textReviewId).padStart(4,'0'):''))+'</div></div><div class="queueAction">'+queueActionHtml(q)+'</div></div>';
 
     async function openSession(query){
       const session=(query.get('session')||'').trim().toLowerCase();
