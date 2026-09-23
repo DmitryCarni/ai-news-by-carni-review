@@ -228,7 +228,7 @@
       const feedbackByIndex=new Map((Array.isArray(feedback?.beats)?feedback.beats:[]).map(x=>[Number(x.index),x]));
       const txtLabel='TXT-'+String(r.reviewId||0).padStart(4,'0');
       const feedbackStatus=String(feedback?.status||'draft');
-      const feedbackFrozen=['queued','processing','committed'].includes(feedbackStatus);
+      const feedbackFrozen=['waiting_for_chat','claimed','candidate_written','validated','queued','processing','committed'].includes(feedbackStatus);
       const feedbackError=String(feedback?.error||'');
       app.innerHTML='<div class="editorial"><div class="editorialHead"><div><div class="brand">AI NEWS BY CARNI · REVIEW</div><div class="sub">Согласование текста</div></div><a class="btn" href="'+location.pathname+'">← Назад</a></div>'+
         '<div class="card"><h1 class="editorialTitle">'+esc(r.title||r.shortId||'Short')+(r.publicationSlot?'<span class="slotBadge '+(r.publicationSlot==='evening'?'evening':'')+'">'+(r.publicationSlot==='evening'?'Вечер':'День')+'</span>':'')+'</h1>'+
@@ -239,7 +239,7 @@
         (r.source?.sectionTitle?'<div class="sourceLine">Источник: '+esc(r.source.sectionTitle)+'</div>':'')+
         '<div class="hash">Candidate SHA-256 · '+esc(r.candidateSha256||'')+'</div>'+
         '<div class="feedbackState '+(feedbackStatus==='failed'?'bad':'')+'" id="feedbackState">'+
-          (feedbackStatus==='queued'?'Замечания отправлены · жду редактора…':feedbackStatus==='processing'?'Редактор переделывает текст…':feedbackStatus==='committed'?'Новая версия собрана · доставляю новый TXT…':feedbackStatus==='failed'?'Предыдущая попытка не собралась: '+esc(feedbackError):feedback?'Черновик замечаний восстановлен.':'Комментарии сохраняются автоматически.')+
+          (feedbackStatus==='waiting_for_chat'?'Замечания зафиксированы. Открой назначенный обычный чат и напиши «отредактируй новость».':feedbackStatus==='claimed'?'AI-редактор забрал запрос и работает…':['candidate_written','validated'].includes(feedbackStatus)?'Новая версия проходит автоматические проверки…':feedbackStatus==='queued'?'Старая очередь переработки…':feedbackStatus==='processing'?'Старая переработка текста…':feedbackStatus==='committed'?'Новая версия собрана · доставляю новый TXT…':feedbackStatus==='failed'?'Предыдущая попытка не собралась: '+esc(feedbackError):feedback?'Черновик замечаний восстановлен.':'Комментарии сохраняются автоматически.')+
         '</div>'+
         (r.canDecide?'<div class="editorialActions"><button class="btn rewrite" id="rewriteFeedback">Переделать по замечаниям</button><button class="btn primary" id="sendReviewer">Исправить в Ревьюере</button><button class="btn green" id="approveExact">Одобрить как есть</button></div>':'<div class="decisionState">Это согласование уже обработано.</div>')+
         '<div class="decisionState" id="decisionState"></div></div></div>';
@@ -301,11 +301,11 @@
         if(!hasComments(payload))return;
         if(!confirm('Переделать эту exact-версию текста по замечаниям?\n\nЗакреплённые строки останутся без изменений. После полного редакционного preflight появится новый TXT.'))return;
         const buttons=['rewriteFeedback','approveExact','sendReviewer'].map(id=>document.getElementById(id));buttons.forEach(b=>{if(b)b.disabled=true});
-        const state=document.getElementById('feedbackState');if(state)state.textContent='Фиксирую замечания и запускаю редактора…';
+        const state=document.getElementById('feedbackState');if(state)state.textContent='Фиксирую замечания для обычного AI-редактора…';
         try{
           await saveDraft(true);
           const result=await portalPost('/editorial/rewrite',payload);
-          if(state)state.textContent='Запрос #'+result.requestId+' принят · редактор собирает новую версию…';
+          if(state)state.textContent='Запрос #'+result.requestId+' сохранён. Открой назначенный обычный чат и напиши «отредактируй новость».';
           setTimeout(()=>{location.href=location.pathname},1200);
         }catch(e){
           buttons.forEach(b=>{if(b)b.disabled=false});
