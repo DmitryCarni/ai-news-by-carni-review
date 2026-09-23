@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="robots" content="noindex,nofollow,noarchive">
   <meta name="referrer" content="no-referrer">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; connect-src https://qbsovyjwnxmryokekypf.supabase.co; img-src https://*.supabase.co data:; style-src 'unsafe-inline'; script-src 'unsafe-inline'; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; connect-src https://qbsovyjwnxmryokekypf.supabase.co; img-src https://*.supabase.co data:; media-src https://*.supabase.co; style-src 'unsafe-inline'; script-src 'unsafe-inline'; base-uri 'none'; form-action 'none'">
   <title>AI News by Carni — Review</title>
   <style>
     :root{--bg:#07101d;--card:#0b1727;--line:#233b57;--text:#f4f7fb;--muted:#93a4ba;--cyan:#42b7ff;--green:#58d9ac;--red:#ff7b86}
@@ -16,6 +16,7 @@
     .pair{max-width:560px;margin:14vh auto 0;text-align:center}.pairCode{font-size:48px;letter-spacing:.16em;font-weight:950;margin:18px 0;color:#fff}.pairHint{line-height:1.55;color:var(--muted)}.hidden{display:none!important}
     .queue{display:grid;gap:10px;margin-top:12px}.queueItem{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px;align-items:center;padding:15px;border:1px solid #29445f;border-radius:12px;background:#091421}.queueTitle{font-size:16px;font-weight:900;line-height:1.25}.queueMeta{font-size:12px;color:var(--muted);margin-top:6px}.queueStage{display:inline-block;border:1px solid #35516f;border-radius:999px;padding:3px 8px;font-size:11px;color:#bdd0e5;margin-left:6px}.slotBadge{display:inline-block;border:1px solid #2d5d7b;border-radius:999px;padding:3px 8px;font-size:11px;color:#9fdcff;margin-left:6px}.slotBadge.evening{border-color:#6b5985;color:#d8c4ff}.queueItem.human{border-color:#3a8bc1;background:#0a1827}.queueItem.human .queueStage{color:#fff}.queueAction{display:flex;gap:7px;align-items:center;justify-content:flex-end}.queueHint{font-size:11px;color:var(--muted);white-space:nowrap}.quiet{color:var(--muted);font-size:12px}.doneLine{padding:10px 2px 0;color:var(--muted);font-size:12px}.archive{margin-top:14px}.archive summary{cursor:pointer;color:var(--muted);font-size:12px}.archive .queue{margin-top:10px}.archive .queueItem{padding:10px 12px;opacity:.82}.archive .queueTitle{font-size:13px}
     .editorial{max-width:900px;margin:0 auto}.editorialHead{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:14px}.editorialTitle{font-size:24px;font-weight:950;line-height:1.2;margin:0}.editorialMeta{font-size:12px;color:var(--muted);margin-top:7px;overflow-wrap:anywhere}.beats{display:grid;gap:8px;margin-top:12px}.beatCard{display:grid;grid-template-columns:34px minmax(0,1fr);gap:10px;align-items:start;padding:11px 12px;border:1px solid #213b56;border-radius:10px;background:#08131f}.beatNo{width:28px;height:28px;border:1px solid #315276;border-radius:999px;display:flex;align-items:center;justify-content:center;font-weight:900;color:#9fdbff}.beatText{font-size:16px;font-weight:850;line-height:1.3}.editorialActions{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;margin-top:15px}.hash{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:11px;color:#8098b0;word-break:break-all;margin-top:12px}.decisionState{margin-top:10px;font-size:13px}.sourceLine{margin-top:12px;color:var(--muted);font-size:12px}
+    .videoReview{max-width:920px;margin:0 auto}.videoBox{display:grid;grid-template-columns:minmax(0,430px) minmax(0,1fr);gap:16px;align-items:start}.videoPlayer{width:100%;aspect-ratio:9/16;background:#000;border:1px solid #29445f;border-radius:13px;display:block}.videoIdentity{display:grid;gap:9px}.identityRow{border:1px solid #213b56;border-radius:10px;background:#08131f;padding:10px 11px}.identityLabel{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:#7890aa;margin-bottom:5px}.identityValue{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:11px;word-break:break-all;color:#dce9f7}.videoMetaTitle{font-size:20px;font-weight:950;line-height:1.25}.videoActions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}.btn.reject{border-color:#8d4650;background:#381820}.videoNote{font-size:12px;color:var(--muted);line-height:1.5;margin-top:10px}@media(max-width:760px){.videoBox{grid-template-columns:1fr}.videoPlayer{max-width:430px;margin:auto}.videoActions{grid-template-columns:1fr}}
     .analytics{display:grid;gap:12px}.analyticsKpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}.kpi{background:#091421;border:1px solid #1e354f;border-radius:12px;padding:13px}.kpiValue{font-size:24px;font-weight:950}.kpiLabel{font-size:11px;color:var(--muted);margin-top:5px}.ageBtns{display:flex;gap:7px;flex-wrap:wrap;margin:10px 0 14px}.ageBtn{border:1px solid #315276;background:#10223a;color:#d7e4f2;border-radius:9px;padding:7px 11px;cursor:pointer;font-weight:850}.ageBtn.active{border-color:var(--cyan);color:#fff}.bars{display:grid;gap:8px}.barRow{display:grid;grid-template-columns:minmax(160px,300px) minmax(150px,1fr) 90px;gap:10px;align-items:center}.barName{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.barTrack{height:18px;background:#06101c;border:1px solid #1e354f;border-radius:999px;overflow:hidden}.barFill{height:100%;background:linear-gradient(90deg,#258bcf,#62d8ff)}.barValue{text-align:right;font-weight:900}.tableWrap{overflow:auto;border:1px solid #1e354f;border-radius:10px}.analyticsTable{width:100%;border-collapse:collapse;min-width:780px}.analyticsTable th,.analyticsTable td{padding:8px 9px;border-bottom:1px solid #1c3048;text-align:right;font-size:12px;white-space:nowrap}.analyticsTable th{background:#0c192a;color:#9fb1c7}.analyticsTable th:first-child,.analyticsTable td:first-child{text-align:left;white-space:normal;min-width:220px}.signals{display:grid;gap:8px}.signal{border:1px solid #29425f;border-radius:10px;padding:10px 12px;background:#091522;font-size:13px;line-height:1.45}.signal.warn{border-color:#6a5124}.signal.good{border-color:#245b49}
     @media(max-width:900px){.analyticsKpis{grid-template-columns:repeat(2,minmax(0,1fr))}.barRow{grid-template-columns:minmax(110px,180px) 1fr 70px}}
     @media(max-width:650px){.hero,.queueItem{grid-template-columns:1fr}.top{align-items:flex-start;flex-direction:column}.pairCode{font-size:38px}.analyticsKpis{grid-template-columns:1fr 1fr}.barRow{grid-template-columns:1fr}.barValue{text-align:left}.barName{white-space:normal}}
@@ -37,7 +38,7 @@
     const queueActionHtml=q=>{
       if(q.action==='storyboard'&&q.sessionId)return '<button class="btn primary" data-open-session="'+esc(q.sessionId)+'">Открыть</button>';
       if(q.action==='text')return '<button class="btn primary" data-open-editorial="'+Number(q.textReviewId||0)+'">Открыть</button>';
-      if(q.action==='video')return '<div class="queueHint">Telegram</div>';
+      if(q.action==='video')return '<button class="btn primary" data-open-video="'+Number(q.videoReviewId||0)+'">Открыть видео</button>';
       return '';
     };
     const slotBadge=q=>q.publicationSlot?'<span class="slotBadge '+(q.publicationSlot==='evening'?'evening':'')+'">'+(q.publicationSlot==='evening'?'Вечер':'День')+'</span>':'';
@@ -260,6 +261,55 @@
       document.getElementById('sendReviewer').onclick=()=>act('reviewer');
     }
 
+
+    async function loadVideo(reviewId){
+      const data=await portalGet('/video?reviewId='+encodeURIComponent(reviewId));
+      const r=data.review||{};
+      const vidLabel='VID-'+String(r.reviewId||0).padStart(4,'0');
+      const bundleSha=String(r.publishBundle?.publishManifestSha256||'');
+      const storyboardHash=String(r.storyboard?.storyboardHash||'');
+      const renderer=String(r.storyboard?.rendererCommit||'');
+      app.innerHTML='<div class="videoReview"><div class="editorialHead"><div><div class="brand">AI NEWS BY CARNI · REVIEW</div><div class="sub">Exact MP4 · финальное согласование</div></div><a class="btn" href="'+location.pathname+'">← Назад</a></div>'+
+        '<div class="card"><div class="videoBox"><div><video class="videoPlayer" controls playsinline preload="metadata" src="'+esc(r.videoUrl||'')+'"></video><div class="videoNote">Защищённая ссылка живёт '+Math.round(Number(r.videoUrlExpiresInSeconds||0)/60)+' мин. Решение привязывается не к ссылке, а к exact SHA-256 файла.</div></div>'+
+        '<div class="videoIdentity"><div><div class="videoMetaTitle">'+esc(r.title||r.shortId||'Short')+'</div><div class="editorialMeta">'+esc(r.reportDate||'')+' · '+esc(vidLabel)+' · '+(Number(r.videoBytes||0)/1048576).toFixed(1)+' МБ</div></div>'+
+        '<div class="identityRow"><div class="identityLabel">Exact MP4 SHA-256</div><div class="identityValue">'+esc(r.videoSha256||'')+'</div></div>'+
+        (r.publishBundle?.present?'<div class="identityRow"><div class="identityLabel">Publish bundle SHA-256</div><div class="identityValue">'+esc(bundleSha)+'</div></div>':'<div class="identityRow"><div class="identityLabel">Publish bundle</div><div class="identityValue bad">Отсутствует — публикация после approval будет заблокирована</div></div>')+
+        (r.storyboard?.revisionId?'<div class="identityRow"><div class="identityLabel">Storyboard</div><div class="identityValue">revision '+esc(r.storyboard.revisionId)+' · '+esc(storyboardHash)+'<br>renderer '+esc(renderer)+'</div></div>':'')+
+        '<div class="identityRow"><div class="identityLabel">YouTube после approval</div><div>'+esc(r.youtube?.releaseMode||'—')+' · initial '+esc(r.youtube?.privacyStatus||'private')+'</div></div></div></div>'+
+        (r.canDecide?'<div class="videoActions"><button class="btn reject" id="rejectVideo">✏️ Нужны правки</button><button class="btn green" id="approveVideo">✅ Одобрить видео</button></div>':'<div class="decisionState">Это exact MP4 уже обработан: '+esc(r.status||'—')+'.</div>')+
+        '<div class="decisionState" id="videoDecisionState"></div></div></div>';
+
+      if(!r.canDecide)return;
+      const act=async(decision)=>{
+        const approve=decision==='approve';
+        const prompt=approve
+          ?'Одобрить именно этот exact MP4?\n\nSHA-256: '+String(r.videoSha256||'').slice(0,16)+'…'
+          :'Вернуть именно этот exact MP4 на правки?\n\nТекущий Storyboard снова откроется для новой версии.';
+        if(!confirm(prompt))return;
+        const buttons=[document.getElementById('approveVideo'),document.getElementById('rejectVideo')];
+        buttons.forEach(b=>{if(b)b.disabled=true});
+        const state=document.getElementById('videoDecisionState');
+        if(state)state.textContent=approve?'Фиксирую exact MP4 и запускаю PRIVATE-публикацию…':'Возвращаю Short в Ревьюер…';
+        try{
+          const result=await portalPost('/video/decision',{
+            reviewId:Number(r.reviewId),
+            decision,
+            videoSha256:String(r.videoSha256||''),
+            publishManifestSha256:bundleSha
+          });
+          if(state)state.textContent=approve
+            ?(result.publisherEligible?'Видео одобрено. PRIVATE YouTube publisher запущен.':'Видео одобрено, но publisher заблокирован.')
+            :'Видео отклонено. Storyboard снова открыт для правок.';
+          setTimeout(()=>{location.href=location.pathname},1100);
+        }catch(e){
+          buttons.forEach(b=>{if(b)b.disabled=false});
+          if(state){state.classList.add('bad');state.textContent=e.message||String(e)}
+        }
+      };
+      document.getElementById('approveVideo').onclick=()=>act('approve');
+      document.getElementById('rejectVideo').onclick=()=>act('reject');
+    }
+
     async function loadHome(){
       const token=localStorage.getItem(portalKey)||'';
       if(!/^[0-9a-f]{64}$/i.test(token)){
@@ -308,12 +358,14 @@
       document.getElementById('openAnalytics').onclick=()=>location.href=analyticsHref;
       document.querySelectorAll('[data-open-session]').forEach(n=>n.onclick=()=>{location.href='?session='+encodeURIComponent(n.dataset.openSession)+'&portal=1'});
       document.querySelectorAll('[data-open-editorial]').forEach(n=>n.onclick=()=>{location.href='?editorial='+encodeURIComponent(n.dataset.openEditorial)});
+      document.querySelectorAll('[data-open-video]').forEach(n=>n.onclick=()=>{location.href='?video='+encodeURIComponent(n.dataset.openVideo)});
     }
 
     try{
       const query=new URLSearchParams(location.search);
       if(query.get('view')==='analytics')await loadAnalytics();
       else if(query.get('editorial'))await loadEditorial(query.get('editorial'));
+      else if(query.get('video'))await loadVideo(query.get('video'));
       else if(query.get('session'))await openSession(query);
       else await loadHome();
     }catch(error){
