@@ -456,7 +456,7 @@
       const recentDone=queue.find(q=>q.stage==='published')||null;
       const hidden=queue.filter(q=>!current.includes(q)).slice(0,12);
 
-      app.innerHTML='<div class="portal"><div class="top"><div><div class="brand">AI NEWS BY CARNI · REVIEW</div><div class="sub">Контрольный центр Shorts</div></div><div style="display:flex;gap:8px"><button class="btn green" id="openAnalytics">Analytics</button><button class="btn" id="disconnect">⋯</button></div></div>'+
+      app.innerHTML='<div class="portal"><div class="top"><div><div class="brand">AI NEWS BY CARNI · REVIEW</div><div class="sub">Контрольный центр Shorts</div></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" id="openRoot">← В корень</button><button class="btn green" id="openAnalytics">Analytics</button><button class="btn" id="disconnect">⋯</button></div></div>'+
       '<div class="card"><b>Сейчас</b><div class="sub">Только то, что требует решения или ещё не закончено.</div><div class="queue">'+(
         current.length?current.map(queueCard).join(''):'<div class="quiet">Ничего не ждёт твоего решения.</div>'
       )+'</div>'+(
@@ -464,6 +464,7 @@
       )+'</div>'+(
         hidden.length?'<details class="archive"><summary>Показать старые и завершённые · '+hidden.length+'</summary><div class="queue">'+hidden.map(queueCard).join('')+'</div></details>':''
       )+'</div>';
+      document.getElementById('openRoot').onclick=()=>location.href='https://news.carni.ltd/';
       document.getElementById('disconnect').onclick=()=>{if(confirm('Отвязать этот браузер от внутреннего Reviewer?')){localStorage.removeItem(portalKey);localStorage.removeItem(pairingIdKey);localStorage.removeItem(pairingCodeKey);location.href=location.pathname}};
       document.getElementById('openAnalytics').onclick=()=>location.href=analyticsHref;
       document.querySelectorAll('[data-open-session]').forEach(n=>n.onclick=()=>{location.href='?session='+encodeURIComponent(n.dataset.openSession)+'&portal=1'});
