@@ -38,7 +38,7 @@
     const queueActionHtml=q=>{
       if(q.action==='storyboard'&&q.sessionId)return '<button class="btn primary" data-open-session="'+esc(q.sessionId)+'">Открыть</button>';
       if(q.action==='text')return '<button class="btn primary" data-open-editorial="'+Number(q.textReviewId||0)+'">Открыть</button>';
-      if(q.action==='video')return '<button class="btn primary" data-open-video="'+Number(q.videoReviewId||0)+'">Открыть видео</button>';
+      if(q.action==='video')return '<div style="display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end">'+(q.sessionId?'<button class="btn" data-open-session="'+esc(q.sessionId)+'">Макет и тайминги</button>':'')+'<button class="btn primary" data-open-video="'+Number(q.videoReviewId||0)+'">Открыть видео</button></div>';
       return '';
     };
     const slotBadge=q=>q.publicationSlot?'<span class="slotBadge '+(q.publicationSlot==='evening'?'evening':'')+'">'+(q.publicationSlot==='evening'?'Вечер':'День')+'</span>':'';
@@ -368,16 +368,27 @@
       const bundleSha=String(r.publishBundle?.publishManifestSha256||'');
       const storyboardHash=String(r.storyboard?.storyboardHash||'');
       const renderer=String(r.storyboard?.rendererCommit||'');
+      const storyboardSessionId=String(r.storyboard?.sessionId||'');
+      const timingBeats=Array.isArray(r.storyboard?.beats)?r.storyboard.beats:[];
+      const timingFmt=v=>Number(v).toFixed(2).replace(/0$/,'').replace('.',',')+'с';
+      const timingSummary=timingBeats.length
+        ?timingBeats.map(x=>String(x.index)+': '+timingFmt(x.seconds)).join(' · ')+' · ролик '+timingFmt(r.storyboard?.durationSeconds||0)
+        :'';
       app.innerHTML='<div class="videoReview"><div class="editorialHead"><div><div class="brand">AI NEWS BY CARNI · REVIEW</div><div class="sub">Exact MP4 · финальное согласование</div></div><a class="btn" href="'+location.pathname+'">← Назад</a></div>'+
         '<div class="card"><div class="videoBox"><div><video class="videoPlayer" controls playsinline preload="metadata" src="'+esc(r.videoUrl||'')+'"></video><div class="videoNote">Защищённая ссылка живёт '+Math.round(Number(r.videoUrlExpiresInSeconds||0)/60)+' мин. Решение привязывается не к ссылке, а к exact SHA-256 файла.</div></div>'+
         '<div class="videoIdentity"><div><div class="videoMetaTitle">'+esc(r.title||r.shortId||'Short')+'</div><div class="editorialMeta">'+esc(r.reportDate||'')+' · '+esc(vidLabel)+' · '+(Number(r.videoBytes||0)/1048576).toFixed(1)+' МБ</div></div>'+
         '<div class="identityRow"><div class="identityLabel">Exact MP4 SHA-256</div><div class="identityValue">'+esc(r.videoSha256||'')+'</div></div>'+
         (r.publishBundle?.present?'<div class="identityRow"><div class="identityLabel">Publish bundle SHA-256</div><div class="identityValue">'+esc(bundleSha)+'</div></div>':'<div class="identityRow"><div class="identityLabel">Publish bundle</div><div class="identityValue bad">Отсутствует — публикация после approval будет заблокирована</div></div>')+
         (r.storyboard?.revisionId?'<div class="identityRow"><div class="identityLabel">Storyboard</div><div class="identityValue">revision '+esc(r.storyboard.revisionId)+' · '+esc(storyboardHash)+'<br>renderer '+esc(renderer)+'</div></div>':'')+
+        (timingSummary?'<div class="identityRow"><div class="identityLabel">Тайминги кадров</div><div class="identityValue">'+esc(timingSummary)+'</div></div>':'')+
+        '<div class="identityRow"><div class="identityLabel">Просмотр</div><div>Web остаётся точкой решения; exact MP4 также отправляется в Telegram для быстрого просмотра.</div></div>'+
         '<div class="identityRow"><div class="identityLabel">YouTube после approval</div><div>'+esc(r.youtube?.releaseMode||'—')+' · initial '+esc(r.youtube?.privacyStatus||'private')+'</div></div></div></div>'+
+        (storyboardSessionId?'<div class="videoActions"><button class="btn" id="openStoryboardFromVideo">← Макет и тайминги</button></div>':'')+
         (r.canDecide?'<div class="videoActions"><button class="btn reject" id="rejectVideo">✏️ Нужны правки</button><button class="btn green" id="approveVideo">✅ Одобрить видео</button></div>':'<div class="decisionState">Это exact MP4 уже обработан: '+esc(r.status||'—')+'.</div>')+
         '<div class="decisionState" id="videoDecisionState"></div></div></div>';
 
+      const storyboardBtn=document.getElementById('openStoryboardFromVideo');
+      if(storyboardBtn)storyboardBtn.onclick=()=>{location.href='?session='+encodeURIComponent(storyboardSessionId)+'&portal=1'};
       if(!r.canDecide)return;
       const act=async(decision)=>{
         const approve=decision==='approve';
@@ -399,7 +410,7 @@
           if(state)state.textContent=approve
             ?(result.publisherEligible?'Видео одобрено. PRIVATE YouTube publisher запущен.':'Видео одобрено, но publisher заблокирован.')
             :'Видео отклонено. Storyboard снова открыт для правок.';
-          setTimeout(()=>{location.href=location.pathname},1100);
+          setTimeout(()=>{location.href=!approve&&storyboardSessionId?('?session='+encodeURIComponent(storyboardSessionId)+'&portal=1'):location.pathname},1100);
         }catch(e){
           buttons.forEach(b=>{if(b)b.disabled=false});
           if(state){state.classList.add('bad');state.textContent=e.message||String(e)}
