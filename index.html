@@ -258,6 +258,7 @@
       return best;
     };
     const retentionPct=value=>{
+      if(value===null||value===undefined||value==='')return '—';
       const n=Number(value);
       return Number.isFinite(n)?(n*100).toLocaleString('ru-RU',{maximumFractionDigits:1})+'%':'—';
     };
@@ -411,7 +412,7 @@
           title:v.title||v.shortId||v.videoId,
           views24:m24?.views??null,
           stayed:v?.studio?.stayedToWatchPct??null,
-          avgPct:v.averageViewPercentage??null,
+          avgPct:m24?.averageViewPercentage??null,
           r25:retentionNearest(curve,.25)?.audienceWatchRatio??null,
           r50:retentionNearest(curve,.50)?.audienceWatchRatio??null,
           r100:retentionNearest(curve,1)?.audienceWatchRatio??null,
@@ -419,7 +420,7 @@
       }).filter(r=>r.views24!==null&&r.views24!==undefined);
       const assocDefs=[
         ['Stayed','stayed',1],
-        ['Avg %','avgPct',1],
+        ['Avg % 24ч','avgPct',1],
         ['Retention 25%','r25',100],
         ['Retention 50%','r50',100],
         ['Retention 100%','r100',100],
@@ -527,7 +528,7 @@
       ].map(x=>'<div class="coverageCell"><div class="coverageValue">'+esc(x[1])+'</div><div class="coverageLabel">'+esc(x[0])+'</div></div>').join('')+'</div></section>'+
       '<section class="card"><b>Кривая удержания</b><div class="retentionToolbar">'+(retentionVideos.length?'<select class="retentionSelect" id="retentionVideoSelect">'+retentionOptions+'</select>':'<span class="muted">YouTube ещё не отдал ни одной кривой.</span>')+'</div>'+(retentionVideo?retentionChartHtml(retentionVideo):'')+'</section>'+
       '<section class="card"><b>Сравнение кривых удержания</b>'+retentionCompareHtml(retentionVideos)+'</section>'+
-      '<section class="card"><b>Вход → удержание → результат</b><div class="studioMetricHint">Результат здесь — просмотры на одинаковом возрасте 24 часа. ρ — ранговая корреляция Спирмена. Это разведочный сигнал, не причинность: выборка маленькая, а Studio/retention дозревают в разное время.</div><div class="assocGrid">'+assocCards+'</div><div class="tableWrap" style="margin-top:12px"><table class="analyticsTable retentionCompareTable"><thead><tr><th>Short</th><th>Просмотры 24ч</th><th>Stayed</th><th>Avg %</th><th>Retention 25%</th><th>50%</th><th>100%</th></tr></thead><tbody>'+assocTableRows+'</tbody></table></div></section>'+
+      '<section class="card"><b>Вход → удержание → результат</b><div class="studioMetricHint">Результат здесь — просмотры на одинаковом возрасте 24 часа. ρ — ранговая корреляция Спирмена. Это разведочный сигнал, не причинность: выборка маленькая, а Studio/retention дозревают в разное время.</div><div class="assocGrid">'+assocCards+'</div><div class="tableWrap" style="margin-top:12px"><table class="analyticsTable retentionCompareTable"><thead><tr><th>Short</th><th>Просмотры 24ч</th><th>Stayed</th><th>Avg % 24ч</th><th>Retention 25%</th><th>50%</th><th>100%</th></tr></thead><tbody>'+assocTableRows+'</tbody></table></div></section>'+
       '<section class="card"><b>Гипотеза: реакции → дальнейший разгон</b><div class="studioMetricHint">Здесь специально разделены сырые лайки и лайки на 1000 просмотров. Сырые лайки могут расти просто потому, что ролик уже получил больше показов. Для более сильной проверки мы отдельно накапливаем лаг-окна: реакции за предыдущие ~3 часа → скорость просмотров в следующие ~3 часа. Корреляцию по лаг-окнам пока не показываем, пока не накопится несколько независимых видео.</div><div class="hypGrid">'+likeHypCards+'</div><div class="tableWrap" style="margin-top:12px"><table class="analyticsTable retentionCompareTable"><thead><tr><th>Short</th><th>Просмотры ≈24ч</th><th>Лайки</th><th>Лайков / 1000</th><th>Факт. возраст</th></tr></thead><tbody>'+likeHypTable+'</tbody></table></div></section>'+
       '<section class="card"><b>Подписчики как стартовая аудитория</b><div class="studioMetricHint">Две разные вещи: <b>SUBSCRIBER</b> — просмотр пришёл из подписочных поверхностей YouTube; <b>SUBSCRIBED</b> — зритель уже был подписан, но мог прийти хоть из Shorts Feed. NOTIFICATION отслеживается отдельно. Это фундамент для гипотезы «подписка/колокольчик усиливают старт следующих роликов», а не доказательство такой причинности.</div><div class="hypGrid">'+seedCards+'</div><div class="tableWrap" style="margin-top:12px"><table class="analyticsTable retentionCompareTable"><thead><tr><th>Short</th><th>SUBSCRIBER views</th><th>NOTIFICATION</th><th>SUBSCRIBED viewers</th><th>Доля подписанных</th><th>Avg % подписанных</th><th>Avg % остальных</th></tr></thead><tbody>'+seedTable+'</tbody></table></div></section>'+
       '<section class="card"><b>Сравнение по одинаковому возрасту</b><div class="ageBtns">'+[1,3,6,12,24,48,72,168].map(h=>'<button class="ageBtn '+(h===selectedAge?'active':'')+'" data-age="'+h+'">'+h+'ч</button>').join('')+'</div><div class="bars">'+(rows.length?rows.map(r=>'<div class="barRow"><div class="barName" title="'+esc(analyticsName(data,r.videoId,r.shortId))+'">'+esc(analyticsName(data,r.videoId,r.shortId))+'</div><div class="barTrack"><div class="barFill" style="width:'+Math.max(2,Math.round(Number(r.views||0)/max*100))+'%"></div></div><div class="barValue">'+aInt(r.views)+'</div></div>').join(''):'<div class="muted">Для '+selectedAge+'ч ещё нет зрелых срезов.</div>')+'</div></section>'+
