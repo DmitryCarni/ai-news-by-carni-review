@@ -291,8 +291,9 @@
         const shown=s.shownInFeed===null||s.shownInFeed===undefined?'':String(Math.round(Number(s.shownInFeed)));
         const stayed=s.stayedToWatchPct===null||s.stayedToWatchPct===undefined?'':String(Number(s.stayedToWatchPct));
         const swiped=s.swipedAwayPct===null||s.swipedAwayPct===undefined?'':String(Number(s.swipedAwayPct));
+        const provenance=s.sourceKind==='studio_csv'?' · Studio ZIP'+(s.swipedAwayDerived?' · свайп расчётный':''):'';
         return '<div class="studioMetricRow" data-studio-row="'+index+'">'+
-          '<div><div class="studioMetricTitle">'+esc(r.title||r.shortId||r.videoId)+'</div><div class="studioMetricMeta">'+esc(r.videoId||'')+(s.observedAt?' · сохранено '+aDate(s.observedAt):' · ещё не заполнено')+'</div></div>'+
+          '<div><div class="studioMetricTitle">'+esc(r.title||r.shortId||r.videoId)+'</div><div class="studioMetricMeta">'+esc(r.videoId||'')+(s.observedAt?' · сохранено '+aDate(s.observedAt):' · ещё не заполнено')+provenance+'</div></div>'+
           '<div class="studioField"><label>Показано в ленте</label><input inputmode="numeric" type="number" min="0" step="1" data-studio-field="shown" value="'+esc(shown)+'" placeholder="—"></div>'+
           '<div class="studioField"><label>Продолжили смотреть, %</label><input inputmode="decimal" type="number" min="0" max="100" step="0.1" data-studio-field="stayed" value="'+esc(stayed)+'" placeholder="—"></div>'+
           '<div class="studioField"><label>Свайпнули, %</label><input inputmode="decimal" type="number" min="0" max="100" step="0.1" data-studio-field="swiped" value="'+esc(swiped)+'" placeholder="—"></div>'+
