@@ -463,6 +463,13 @@
     async function loadVideo(reviewId){
       const data=await portalGet('/video?reviewId='+encodeURIComponent(reviewId));
       const r=data.review||{};
+      const requestedId=Number(reviewId||0);
+      const actualId=Number(r.reviewId||0);
+      if(actualId>0&&actualId!==requestedId){
+        const params=new URLSearchParams(location.search);
+        params.set('video',String(actualId));
+        history.replaceState({},'',location.pathname+'?'+params.toString());
+      }
       const requestedReturnShort=(new URLSearchParams(location.search).get('returnShort')||String(r.shortId||'')).trim();
       const returnHref=location.pathname;
       const flowState=await shortState(requestedReturnShort||String(r.shortId||''));
@@ -478,7 +485,10 @@
       const timingSummary=timingBeats.length
         ?timingBeats.map(x=>String(x.index)+': '+timingFmt(x.seconds)).join(' · ')+' · ролик '+timingFmt(r.storyboard?.durationSeconds||0)
         :'';
-      app.innerHTML='<div class="videoReview"><div class="editorialHead"><div><div class="brand">AI NEWS BY CARNI · REVIEW</div><div class="sub">Exact MP4 · финальное согласование</div></div><a class="btn" href="'+returnHref+'">← К очереди</a></div>'+flowHtml+
+      const staleNotice=Number(r.resolvedFromStaleReviewId||0)>0
+        ?'<div class="workspaceNeed current"><b>Обновлено:</b> старая ссылка VID-'+String(r.resolvedFromStaleReviewId).padStart(4,'0')+' автоматически заменена на актуальный '+esc(vidLabel)+'.</div>'
+        :'';
+      app.innerHTML='<div class="videoReview"><div class="editorialHead"><div><div class="brand">AI NEWS BY CARNI · REVIEW</div><div class="sub">Exact MP4 · финальное согласование</div></div><a class="btn" href="'+returnHref+'">← К очереди</a></div>'+flowHtml+staleNotice+
         '<div class="card"><div class="videoBox"><div><video class="videoPlayer" controls playsinline preload="metadata" src="'+esc(r.videoUrl||'')+'"></video><div class="videoNote">Защищённая ссылка живёт '+Math.round(Number(r.videoUrlExpiresInSeconds||0)/60)+' мин. Решение привязывается не к ссылке, а к exact SHA-256 файла.</div></div>'+
         '<div class="videoIdentity"><div><div class="videoMetaTitle">'+esc(r.title||r.shortId||'Short')+'</div><div class="editorialMeta">'+esc(r.reportDate||'')+' · '+esc(vidLabel)+' · '+(Number(r.videoBytes||0)/1048576).toFixed(1)+' МБ</div></div>'+
         '<div class="identityRow"><div class="identityLabel">Exact MP4 SHA-256</div><div class="identityValue">'+esc(r.videoSha256||'')+'</div></div>'+
