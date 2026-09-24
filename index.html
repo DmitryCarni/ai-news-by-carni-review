@@ -223,6 +223,23 @@
       return j;
     }
 
+    async function portalUpload(path,file){
+      const token=localStorage.getItem(portalKey)||'';
+      if(!/^[0-9a-f]{64}$/i.test(token)) throw new Error('Браузер не привязан');
+      const form=new FormData();
+      form.append('file',file,file.name||'studio-export.zip');
+      const r=await fetch(portalApi+path,{
+        method:'POST',
+        headers:{'x-review-portal-token':token},
+        body:form,
+        cache:'no-store'
+      });
+      const j=await r.json().catch(()=>({}));
+      if(r.status===401){localStorage.removeItem(portalKey);throw new Error('Доступ браузера истёк')}
+      if(!r.ok||!j.ok)throw new Error(j.error||('HTTP '+r.status));
+      return j;
+    }
+
     function analyticsName(data,videoId,shortId){
       const v=(data.videos||[]).find(x=>x.videoId===videoId);
       return String(v?.title||shortId||videoId||'Short');
@@ -290,7 +307,7 @@
       if(r24.length>=2)signals.push({c:'good',t:'24-часовые срезы уже сравнимы',d:'Диапазон сейчас '+aInt(r24[0].views)+'–'+aInt(r24[r24.length-1].views)+' просмотров. Причину разницы пока не приписываем одному фактору.'});
       if(!signals.length)signals.push({c:'good',t:'База уже пригодна для наблюдений',d:'Можно искать повторяющиеся паттерны, но не объявлять причинность без дополнительной проверки.'});
 
-      app.innerHTML='<div class="portal analytics"><div class="top"><div><div class="brand">AI NEWS BY CARNI · ANALYTICS</div><div class="sub">Сравнение Shorts по одинаковому возрасту · сбор каждые '+esc(data.source?.collectorCadenceHours||6)+'ч</div></div><div class="topActions"><button class="btn" id="analyticsExport">Скачать датасет JSON</button><button class="btn" id="analyticsHome">На главную</button></div></div>'+
+      app.innerHTML='<div class="portal analytics"><div class="top"><div><div class="brand">AI NEWS BY CARNI · ANALYTICS</div><div class="sub">Сравнение Shorts по одинаковому возрасту · сбор каждые '+esc(data.source?.collectorCadenceHours||6)+'ч</div></div><div class="topActions"><input id="studioZipInput" type="file" accept=".zip,application/zip" hidden><button class="btn" id="studioZipImport">Импорт Studio ZIP</button><button class="btn" id="analyticsExport">Скачать датасет JSON</button><button class="btn" id="analyticsHome">На главную</button></div></div>'+
       '<div class="analyticsKpis">'+[
         ['Подписчики',aInt(ch.subscribers)],
         ['Публичные Shorts',aInt(count)],
@@ -316,6 +333,30 @@
       '<section class="card"><b>Что реально видно из данных</b><div class="signals" style="margin-top:10px">'+signals.map(s=>'<div class="signal '+s.c+'"><b>'+esc(s.t)+'</b><br>'+esc(s.d)+'</div>').join('')+'</div></section></div>';
 
       document.getElementById('analyticsHome').onclick=()=>location.href=location.pathname;
+      const studioZipInput=document.getElementById('studioZipInput');
+      const studioZipImport=document.getElementById('studioZipImport');
+      studioZipImport.onclick=()=>studioZipInput.click();
+      studioZipInput.onchange=async()=>{
+        const file=studioZipInput.files?.[0];
+        if(!file)return;
+        const before=studioZipImport.textContent;
+        studioZipImport.disabled=true;
+        studioZipImport.textContent='Импортирую…';
+        try{
+          const result=await portalUpload('/analytics/studio-export-import',file);
+          const extra=result.duplicate?'Этот ZIP уже был импортирован.':'Импорт завершён.';
+          const unmatched=(result.unmatchedVideos||[]).length?'\nНе сопоставлены: '+result.unmatchedVideos.join(', '):'';
+          alert(extra+'\nСтрок: '+Number(result.importedRows||0)+'\nСопоставлено: '+Number(result.matchedVideos??result.importedRows??0)+'\nStudio-наблюдений: '+Number(result.translatedObservations||0)+unmatched);
+          await loadAnalytics();
+        }catch(e){
+          studioZipImport.disabled=false;
+          studioZipImport.textContent='Ошибка импорта';
+          alert('Не удалось импортировать Studio ZIP: '+String(e.message||e));
+          setTimeout(()=>{studioZipImport.textContent=before;studioZipImport.disabled=false},1400);
+        }finally{
+          studioZipInput.value='';
+        }
+      };
       document.getElementById('analyticsExport').onclick=async()=>{
         const btn=document.getElementById('analyticsExport');
         const before=btn.textContent;
