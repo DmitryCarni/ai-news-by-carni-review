@@ -24,6 +24,42 @@
     .coverageMatrixTable{min-width:980px}.coverageMatrixTable td,.coverageMatrixTable th{text-align:center}.coverageMatrixTable td:first-child,.coverageMatrixTable th:first-child{text-align:left}.coverageBadge{display:inline-flex;align-items:center;justify-content:center;min-width:62px;border:1px solid #2a4058;border-radius:999px;padding:3px 7px;font-size:10px;font-weight:900;line-height:1.15;white-space:nowrap}.coverageBadge.ok{border-color:#2c755d;background:#0e2a22;color:#9af0c5}.coverageBadge.wait{border-color:#7b632d;background:#2d2510;color:#f3d57e}.coverageBadge.missing{border-color:#3b4b5c;background:#101820;color:#92a6b9}.coverageBadge.late{border-color:#8f414b;background:#32171d;color:#ff9aa5}.coverageAge{font-size:10px;color:var(--muted);margin-top:3px}
     @media(max-width:900px){.audienceGrid{grid-template-columns:1fr}.analyticsKpis{grid-template-columns:repeat(2,minmax(0,1fr))}.coverageGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.retentionStats{grid-template-columns:repeat(3,minmax(0,1fr))}.barRow{grid-template-columns:minmax(110px,180px) 1fr 70px}.studioMetricRow{grid-template-columns:1fr 1fr}.studioMetricTitle{grid-column:1/-1}.studioSave{grid-column:1/-1}}
     @media(max-width:650px){.hero,.queueItem{grid-template-columns:1fr}.top{align-items:flex-start;flex-direction:column}.pairCode{font-size:38px}.analyticsKpis{grid-template-columns:1fr 1fr}.barRow{grid-template-columns:1fr}.barValue{text-align:left}.barName{white-space:normal}}
+
+    .analyticsModeBar{position:sticky;top:0;z-index:20;display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:10px 0;background:linear-gradient(180deg,var(--bg) 72%,rgba(7,16,29,.92));backdrop-filter:blur(8px)}
+    .analyticsModeBtn{border:1px solid #315276;background:#0d1d2e;color:#a9bdd1;border-radius:999px;padding:8px 13px;font-size:12px;font-weight:900;cursor:pointer}
+    .analyticsModeBtn.active{border-color:var(--cyan);background:#123b55;color:#fff;box-shadow:0 0 0 1px #42b7ff33 inset}
+    .analyticsModeHint{font-size:11px;color:var(--muted);margin-left:4px}
+    .analyticsOverviewIntro{display:grid;grid-template-columns:1.3fr .7fr;gap:12px}
+    .analyticsOverviewLead{font-size:18px;font-weight:950;line-height:1.2}
+    .analyticsOverviewCopy{font-size:12px;color:var(--muted);line-height:1.5;margin-top:6px}
+    .analyticsQuickGrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:10px}
+    .analyticsQuick{border:1px solid #1e354f;border-radius:10px;background:#08131f;padding:10px}
+    .analyticsQuickValue{font-size:20px;font-weight:950}
+    .analyticsQuickLabel{font-size:10px;color:var(--muted);margin-top:4px}
+    .analyticsFocus{display:grid;gap:12px}
+    .analyticsFocusHead{display:grid;grid-template-columns:minmax(0,1fr) minmax(260px,460px);gap:12px;align-items:end}
+    .analyticsFocusTitle{font-size:20px;font-weight:950;line-height:1.2}
+    .analyticsFocusKpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px}
+    .analyticsFocusGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+    .analyticsFocusGrid .card{margin:0}
+    .analyticsFocusWide{grid-column:1/-1}
+    .analyticsSectionHead{display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .analyticsCollapse{border:1px solid #29425f;background:#0b1929;color:#a8bfd5;border-radius:8px;padding:5px 8px;font-size:10px;font-weight:850;cursor:pointer}
+    .analyticsRaw.collapsed>:not(.analyticsSectionHead){display:none}
+    .analyticsRaw.collapsed{padding-bottom:12px}
+    .analyticsRaw{transition:border-color .15s ease}
+    .analyticsRaw:hover{border-color:#315276}
+    .analyticsModeOverview .analyticsRaw{display:none}
+    .analyticsModeShort .analyticsMainSection{display:none}
+    .analyticsModeAll .analyticsFocus{display:none}
+    .analyticsModeOverview .analyticsFocus{display:none}
+    .analyticsModeShort .analyticsKpis{display:none}
+    .analyticsModeAll .analyticsOverviewOnly{display:none}
+    .analyticsModeShort .analyticsOverviewOnly{display:none}
+    .analyticsHumanSummary{border-color:#2a5272;background:linear-gradient(135deg,#0c2136,#091421 70%)}
+    .analyticsSectionEyebrow{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:#7f9ab5;margin-bottom:5px;font-weight:850}
+    @media(max-width:1050px){.analyticsFocusKpis{grid-template-columns:repeat(3,minmax(0,1fr))}.analyticsQuickGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.analyticsOverviewIntro{grid-template-columns:1fr}}
+    @media(max-width:760px){.analyticsFocusHead{grid-template-columns:1fr}.analyticsFocusGrid{grid-template-columns:1fr}.analyticsFocusWide{grid-column:auto}.analyticsFocusKpis{grid-template-columns:repeat(2,minmax(0,1fr))}.analyticsModeHint{width:100%;margin-left:0}}
   </style>
 </head>
 <body>
@@ -278,6 +314,8 @@
     let analyticsRetentionVideoId='';
     let analyticsAudienceVideoId='';
     let analyticsTelemetryVideoId='';
+    let analyticsFocusVideoId='';
+    let analyticsViewMode='overview';
     let analyticsResearchStatus=null;
     const retentionNearest=(curve,target)=>{
       let best=null,bestDistance=Infinity;
@@ -764,6 +802,9 @@
       const o=data.overview||{},ch=data.channel||{},count=Number(o.trackedPublicShorts||0),coverage=o.evidenceCoverage||{},ret=Number(coverage.retentionCurve||0);
       const coverageTotal=Number(coverage.total||count||0);
       const sortedVideos=analyticsSortedVideos(data.videos||[]);
+      if(!sortedVideos.some(v=>v.videoId===analyticsFocusVideoId))analyticsFocusVideoId=sortedVideos[0]?.videoId||'';
+      const focusVideo=sortedVideos.find(v=>v.videoId===analyticsFocusVideoId)||sortedVideos[0]||null;
+      const focusVideoOptions=sortedVideos.map(v=>'<option value="'+esc(v.videoId)+'" '+(v.videoId===focusVideo?.videoId?'selected':'')+'>'+esc(v.title||v.shortId||v.videoId)+'</option>').join('');
       const retentionVideos=sortedVideos.filter(v=>Array.isArray(v.retentionCurve)&&v.retentionCurve.length>0);
       if(!retentionVideos.some(v=>v.videoId===analyticsRetentionVideoId))analyticsRetentionVideoId=retentionVideos[0]?.videoId||'';
       const retentionVideo=retentionVideos.find(v=>v.videoId===analyticsRetentionVideoId)||retentionVideos[0]||null;
@@ -906,6 +947,66 @@
         '</tr>';
       }).join('');
 
+      const focusStudio=focusVideo?.studio||{};
+      const focusAdvanced=focusVideo?.studioAdvanced||{};
+      const focusFreshness=focusVideo?.storyFreshness||{};
+      const focusMilestones=focusVideo?map.get(focusVideo.videoId)||{}:{};
+      const focusCalendar=Array.isArray(focusVideo?.studioEntryCalendarMilestones)?focusVideo.studioEntryCalendarMilestones:[];
+      const focusCalendarByAge=new Map(focusCalendar.map(item=>[Number(item?.targetHours),item]));
+      const focusShown=focusStudio.shownInFeed;
+      const focusEstimate=focusAdvanced.feedOpportunityEstimate;
+      const focusStayed=focusStudio.stayedToWatchPct;
+      const focusSwiped=focusStudio.swipedAwayPct;
+      const focusSourcePublished=focusFreshness.hasSourceTimeEvidence===true
+        ? freshnessPointLabel(focusFreshness.sourcePrecision,focusFreshness.sourcePublishedAt,focusFreshness.sourcePublishedDate)
+        : '—';
+      const focusEventKnown=focusFreshness.hasEventTimeEvidence===true
+        ? freshnessPointLabel(focusFreshness.eventPrecision,focusFreshness.firstKnownEventAt,focusFreshness.firstKnownEventDate)
+        : '—';
+      const focusSourceAge=freshnessAgeLabel(focusFreshness.sourceAgeHoursAtPublish,focusFreshness.sourceAgeCalendarDaysAtPublish);
+      const focusEventAge=freshnessAgeLabel(focusFreshness.eventAgeHoursAtPublish,focusFreshness.eventAgeCalendarDaysAtPublish);
+      const focusAgeCells=[1,3,6,12,24,48,72,168].map(hours=>{
+        const item=focusMilestones[hours];
+        return '<div class="analyticsQuick"><div class="analyticsQuickValue">'+esc(item?.views===null||item?.views===undefined?'—':aInt(item.views))+'</div><div class="analyticsQuickLabel">'+hours+'ч · просмотры</div></div>';
+      }).join('');
+      const focusCalendarRows=[24,48,72,168].map(hours=>{
+        const item=focusCalendarByAge.get(hours);
+        const label=hours===168?'7 дней':String(hours/24)+' день'+(hours===24?'':'я');
+        return '<tr><td>'+esc(label)+'</td><td><b>'+esc(item?.stayedToWatchPct===null||item?.stayedToWatchPct===undefined?'—':aPct(item.stayedToWatchPct))+'</b></td><td>'+esc(item?.swipedAwayPct===null||item?.swipedAwayPct===undefined?'—':aPct(item.swipedAwayPct))+'</td></tr>';
+      }).join('');
+      const focusPanelHtml=focusVideo
+        ? '<div class="analyticsFocus">'+
+          '<section class="card analyticsHumanSummary"><div class="analyticsFocusHead"><div><div class="analyticsSectionEyebrow">Один Short</div><div class="analyticsFocusTitle">'+esc(focusVideo.title||focusVideo.shortId||focusVideo.videoId)+'</div><div class="analyticsOverviewCopy">Сначала результат и поведение зрителя, затем причины и технические подробности.</div></div><select class="retentionSelect" id="analyticsFocusVideo">'+focusVideoOptions+'</select></div></section>'+
+          '<div class="analyticsFocusKpis">'+[
+            ['Просмотры',aInt(focusVideo.views)],
+            ['Возраст',aAge(focusVideo.ageHours)],
+            ['Средний просмотр',aPct(focusVideo.averageViewPercentage)],
+            ['Продолжили смотреть',focusStayed===null||focusStayed===undefined?'—':aPct(focusStayed)],
+            ['Лайки',aInt(focusVideo.likes)],
+            ['Подписки +',aInt(focusVideo.subscribersGained)]
+          ].map(x=>'<div class="kpi"><div class="kpiValue">'+esc(x[1])+'</div><div class="kpiLabel">'+esc(x[0])+'</div></div>').join('')+'</div>'+
+          '<section class="card"><div class="analyticsSectionEyebrow">Разгон</div><b>Просмотры по возрасту ролика</b><div class="analyticsQuickGrid">'+focusAgeCells+'</div></section>'+
+          '<div class="analyticsFocusGrid">'+
+            '<section class="card"><div class="analyticsSectionEyebrow">Вход в просмотр</div><b>Остановился зритель или свайпнул</b><div class="analyticsQuickGrid">'+
+              '<div class="analyticsQuick"><div class="analyticsQuickValue">'+esc(focusShown===null||focusShown===undefined?'—':aInt(focusShown))+'</div><div class="analyticsQuickLabel">Показано в ленте · точно</div></div>'+
+              '<div class="analyticsQuick"><div class="analyticsQuickValue">'+esc(focusEstimate===null||focusEstimate===undefined?'—':'≈ '+aInt(focusEstimate))+'</div><div class="analyticsQuickLabel">Возможностей показа · оценка</div></div>'+
+              '<div class="analyticsQuick"><div class="analyticsQuickValue">'+esc(focusStayed===null||focusStayed===undefined?'—':aPct(focusStayed))+'</div><div class="analyticsQuickLabel">Продолжили смотреть</div></div>'+
+              '<div class="analyticsQuick"><div class="analyticsQuickValue">'+esc(focusSwiped===null||focusSwiped===undefined?'—':aPct(focusSwiped))+'</div><div class="analyticsQuickLabel">Свайпнули</div></div>'+
+            '</div><div class="studioMetricHint">Точный счётчик «Показано в ленте» и расчётная оценка намеренно не смешиваются.</div></section>'+
+            '<section class="card"><div class="analyticsSectionEyebrow">Свежесть</div><b>Насколько новость была свежей</b><div class="analyticsQuickGrid">'+
+              '<div class="analyticsQuick"><div class="analyticsQuickValue">'+esc(focusSourcePublished)+'</div><div class="analyticsQuickLabel">Источник опубликован</div></div>'+
+              '<div class="analyticsQuick"><div class="analyticsQuickValue">'+esc(focusEventKnown)+'</div><div class="analyticsQuickLabel">Событие известно с</div></div>'+
+              '<div class="analyticsQuick"><div class="analyticsQuickValue">'+esc(focusSourceAge)+'</div><div class="analyticsQuickLabel">Возраст источника при публикации</div></div>'+
+              '<div class="analyticsQuick"><div class="analyticsQuickValue">'+esc(focusEventAge)+'</div><div class="analyticsQuickLabel">Возраст события при публикации</div></div>'+
+            '</div></section>'+
+            '<section class="card"><div class="analyticsSectionEyebrow">Вход · одинаковый возраст</div><b>Продолжили / свайпнули</b><div class="tableWrap" style="margin-top:10px"><table class="analyticsTable"><thead><tr><th>Возраст</th><th>Продолжили</th><th>Свайпнули</th></tr></thead><tbody>'+focusCalendarRows+'</tbody></table></div></section>'+
+            '<section class="card"><div class="analyticsSectionEyebrow">Аудитория</div><b>Кто смотрит</b>'+audiencePanelHtml(focusVideo)+'</section>'+
+            '<section class="card analyticsFocusWide"><div class="analyticsSectionEyebrow">Удержание</div><b>Где зритель остаётся, а где уходит</b>'+(Array.isArray(focusVideo.retentionCurve)&&focusVideo.retentionCurve.length?retentionChartHtml(focusVideo):'<div class="muted" style="margin-top:10px">Кривая удержания для этого Short ещё не обработана YouTube.</div>')+'</section>'+
+            '<section class="card analyticsFocusWide"><div class="analyticsSectionEyebrow">Производство</div><b>Что именно было сделано в ролике</b>'+productionTelemetryPanelHtml(focusVideo)+'</section>'+
+          '</div>'+
+        '</div>'
+        : '<div class="analyticsFocus"><section class="card"><b>Short ещё не выбран</b></section></div>';
+
       const signals=[];
       if(count<30)signals.push({c:'warn',t:'Выборка пока маленькая для факторных выводов',d:'Сейчас отслеживается '+count+' реальных Shorts. Используем данные для описания, контроля качества сбора и формирования гипотез — не для автоматического ранжирования факторов или причинных выводов.'});
       if(ret<count)signals.push({c:'warn',t:'Кривая удержания пока не заполнена',d:'Пер-позиционная retention curve есть для '+ret+' из '+count+' роликов. Это отдельный пробел данных; средняя длительность просмотра её не заменяет.'});
@@ -913,7 +1014,16 @@
       if(r24.length>=2)signals.push({c:'good',t:'24-часовые срезы уже сравнимы',d:'Диапазон сейчас '+aInt(r24[0].views)+'–'+aInt(r24[r24.length-1].views)+' просмотров. Причину разницы пока не приписываем одному фактору.'});
       if(!signals.length)signals.push({c:'good',t:'База уже пригодна для наблюдений',d:'Можно искать повторяющиеся паттерны, но не объявлять причинность без дополнительной проверки.'});
 
-      app.innerHTML='<div class="portal analytics"><div class="top"><div><div class="brand">AI NEWS BY CARNI · ANALYTICS</div><div class="sub">Сравнение Shorts по одинаковому возрасту · сбор каждые '+esc(data.source?.collectorCadenceHours||6)+'ч</div></div><div class="topActions"><input id="studioZipInput" type="file" accept=".zip,application/zip" hidden><button class="btn" id="studioZipImport">Импорт Studio ZIP</button><button class="btn green" id="deepResearchPack">Пакет Deep Research</button><button class="btn" id="analyticsExport">Скачать датасет JSON</button><button class="btn" id="analyticsHome">На главную</button></div></div>'+
+      const analyticsModeClass=analyticsViewMode==='short'?'analyticsModeShort':analyticsViewMode==='all'?'analyticsModeAll':'analyticsModeOverview';
+      const analyticsModeHint=analyticsViewMode==='short'
+        ? 'Один ролик: результат → вход → удержание → аудитория → производство'
+        : analyticsViewMode==='all'
+          ? 'Полный технический слой. Тяжёлые блоки свёрнуты по умолчанию.'
+          : 'Главное для решений: состояние канала, сравнение роликов и ключевые пробелы данных.';
+      app.innerHTML='<div class="portal analytics '+analyticsModeClass+'"><div class="top"><div><div class="brand">AI NEWS BY CARNI · ANALYTICS</div><div class="sub">Сравнение Shorts по одинаковому возрасту · сбор каждые '+esc(data.source?.collectorCadenceHours||6)+'ч</div></div><div class="topActions"><input id="studioZipInput" type="file" accept=".zip,application/zip" hidden><button class="btn" id="studioZipImport">Импорт Studio ZIP</button><button class="btn green" id="deepResearchPack">Пакет Deep Research</button><button class="btn" id="analyticsExport">Скачать датасет JSON</button><button class="btn" id="analyticsHome">На главную</button></div></div>'+
+      '<div class="analyticsModeBar"><button class="analyticsModeBtn '+(analyticsViewMode==='overview'?'active':'')+'" data-analytics-mode="overview">Обзор</button><button class="analyticsModeBtn '+(analyticsViewMode==='short'?'active':'')+'" data-analytics-mode="short">Один Short</button><button class="analyticsModeBtn '+(analyticsViewMode==='all'?'active':'')+'" data-analytics-mode="all">Все данные</button><span class="analyticsModeHint">'+esc(analyticsModeHint)+'</span></div>'+
+      '<div class="analyticsOverviewOnly analyticsOverviewIntro"><section class="card analyticsHumanSummary"><div class="analyticsSectionEyebrow">Что происходит сейчас</div><div class="analyticsOverviewLead">'+esc(signals[0]?.t||'Данные собираются')+'</div><div class="analyticsOverviewCopy">'+esc(signals[0]?.d||'Смотрим на факты, а не пытаемся объяснить алгоритм по маленькой выборке.')+'</div></section><section class="card"><div class="analyticsSectionEyebrow">Готовность данных</div><div class="analyticsOverviewLead">'+esc(ret+' / '+count)+'</div><div class="analyticsOverviewCopy">Shorts с кривой удержания · P3: '+esc(freshnessAcceptanceStatus==='accepted'?'подтверждён':freshnessAcceptanceStatus==='candidate_present_not_accepted'?'проверяется':'ждёт следующий ролик')+'</div></section></div>'+
+      focusPanelHtml+
       '<div class="analyticsKpis">'+[
         ['Подписчики',aInt(ch.subscribers)],
         ['Видео на канале',aInt(ch.videos)],
@@ -961,6 +1071,54 @@
         sortedVideos.length?sortedVideos.map(r=>'<tr><td><b>'+esc(r.title||r.shortId)+'</b><div class="muted">'+esc(r.storyShape||'')+(r.template?' · '+esc(r.template):'')+'</div></td><td>'+aAge(r.ageHours)+'</td><td><b>'+aInt(r.views)+'</b></td><td>'+((r.viewsPerHour===null||r.viewsPerHour===undefined)?'ждём':aOne(r.viewsPerHour)+'/ч')+'</td><td>'+aPct(r.averageViewPercentage)+'</td><td>'+((r.averageViewDuration===null||r.averageViewDuration===undefined)?'ждём':aOne(r.averageViewDuration)+'с')+'</td><td>'+aInt(r.likes)+'</td><td>'+esc((r.publicationLocalLabel||'—')+' · '+aSlot(r.publicationSlot))+'</td></tr>').join(''):'<tr><td colspan="8" class="muted">Опубликованных Shorts пока нет.</td></tr>'
       )+'</tbody></table></div></section>'+
       '<section class="card"><b>Что реально видно из данных</b><div class="signals" style="margin-top:10px">'+signals.map(s=>'<div class="signal '+s.c+'"><b>'+esc(s.t)+'</b><br>'+esc(s.d)+'</div>').join('')+'</div></section></div>';
+
+      const rawSectionPrefixes=[
+        'Полнота по каждому Short',
+        'Паспорт ролика · производство и креатив',
+        'Аудитория',
+        'Дополнительное вовлечение',
+        'Свежесть новости',
+        'YouTube Studio · вход в просмотр',
+        'Показано в ленте · точный счётчик по возрасту',
+        'Кривая удержания',
+        'Срез ',
+        'Возрастные срезы · просмотры'
+      ];
+      document.querySelectorAll('.portal.analytics > section.card').forEach(section=>{
+        section.classList.add('analyticsMainSection');
+        const titleNode=section.querySelector(':scope > b');
+        const title=String(titleNode?.textContent||'').trim();
+        const isRaw=rawSectionPrefixes.some(prefix=>title.startsWith(prefix));
+        if(!isRaw)return;
+        section.classList.add('analyticsRaw','collapsed');
+        if(titleNode){
+          const head=document.createElement('div');
+          head.className='analyticsSectionHead';
+          titleNode.before(head);
+          head.appendChild(titleNode);
+          const btn=document.createElement('button');
+          btn.type='button';
+          btn.className='analyticsCollapse';
+          btn.textContent='Развернуть';
+          btn.onclick=()=>{
+            const collapsed=section.classList.toggle('collapsed');
+            btn.textContent=collapsed?'Развернуть':'Свернуть';
+          };
+          head.appendChild(btn);
+        }
+      });
+
+      document.querySelectorAll('[data-analytics-mode]').forEach(btn=>btn.onclick=()=>{
+        const mode=String(btn.dataset.analyticsMode||'overview');
+        analyticsViewMode=['overview','short','all'].includes(mode)?mode:'overview';
+        renderAnalytics(data,selectedAge);
+      });
+      const focusSelect=document.getElementById('analyticsFocusVideo');
+      if(focusSelect)focusSelect.onchange=()=>{
+        analyticsFocusVideoId=String(focusSelect.value||'');
+        analyticsViewMode='short';
+        renderAnalytics(data,selectedAge);
+      };
 
       document.getElementById('analyticsHome').onclick=()=>location.href=location.pathname;
       const studioZipInput=document.getElementById('studioZipInput');
