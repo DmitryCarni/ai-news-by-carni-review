@@ -323,10 +323,11 @@
         '<polyline class="retentionLine" points="'+points+'"></polyline></svg>';
       const checkpoints=[.10,.25,.50,.75,1].map(target=>{
         const p=retentionNearest(curve,target);
-        return '<div class="retentionStat"><div class="retentionStatValue">'+retentionPct(p?.audienceWatchRatio)+'</div><div class="retentionStatLabel">'+Math.round(target*100)+'% ролика</div></div>';
+        const relative=(p?.relativeRetentionPerformance===null||p?.relativeRetentionPerformance===undefined)?'—':Number(p.relativeRetentionPerformance).toLocaleString('ru-RU',{maximumFractionDigits:3});
+        return '<div class="retentionStat"><div class="retentionStatValue">'+retentionPct(p?.audienceWatchRatio)+'</div><div class="retentionStatLabel">'+Math.round(target*100)+'% ролика · relative '+esc(relative)+'</div></div>';
       }).join('');
       const captured=curve[0]?.capturedAt?' · снимок '+aDate(curve[0].capturedAt):'';
-      return '<div class="studioMetricHint">100 точек по длине ролика'+captured+'. Значения выше 100% возможны из-за повторных просмотров/лупов.</div><div class="retentionChart">'+svg+'</div><div class="retentionStats">'+checkpoints+'</div>';
+      return '<div class="studioMetricHint">100 точек по длине ролика'+captured+'. Показываем и audienceWatchRatio, и уже хранимый relativeRetentionPerformance. Значения выше 100% возможны из-за повторных просмотров/лупов.</div><div class="retentionChart">'+svg+'</div><div class="retentionStats">'+checkpoints+'</div>';
     };
     const audienceNumber=value=>{
       if(value===null||value===undefined||value==='')return null;
@@ -370,6 +371,21 @@
         '<div class="audienceEmpty">'+esc(emptyText)+'</div>'
       )+'</div></div>';
     };
+    const audienceMetricSummary=row=>{
+      const parts=[];
+      if(audienceNumber(row?.views)!==null)parts.push(aInt(row.views)+' просм.');
+      if(audienceNumber(row?.engagedViews)!==null)parts.push(aInt(row.engagedViews)+' engaged');
+      if(audienceNumber(row?.averageViewDuration)!==null)parts.push(aOne(row.averageViewDuration)+'с avg');
+      if(audienceNumber(row?.averageViewPercentage)!==null)parts.push(aPct(row.averageViewPercentage)+' avg');
+      if(audienceNumber(row?.estimatedMinutesWatched)!==null)parts.push(aOne(row.estimatedMinutesWatched)+' мин');
+      if(audienceNumber(row?.shares)!==null&&Number(row.shares)>0)parts.push(aInt(row.shares)+' shares');
+      return parts.join(' · ')||'—';
+    };
+    const audienceGenericLabel=(value,value2)=>{
+      const a=String(value||'').replace(/_/g,' ');
+      const b=String(value2||'').replace(/_/g,' ');
+      return b?a+' · '+b:a||'—';
+    };
     const audiencePanelHtml=video=>{
       if(!video)return '<div class="muted">YouTube ещё не отдал аудиторию ни для одного Short.</div>';
       const a=video.audience||{};
@@ -382,16 +398,22 @@
       const devices=(a.device_os||[]).filter(r=>audienceNumber(r.views)!==null&&Number(r.views)>0)
         .sort((x,y)=>Number(y.views)-Number(x.views)).slice(0,10);
       const traffic=(a.traffic_source||[]).filter(r=>audienceNumber(r.views)!==null&&Number(r.views)>0)
-        .sort((x,y)=>Number(y.views)-Number(x.views)).slice(0,8);
-      const latest=[...demographics,...countries,...subscribed,...devices,...traffic]
+        .sort((x,y)=>Number(y.views)-Number(x.views)).slice(0,10);
+      const playback=(a.playback_location||[]).filter(r=>audienceNumber(r.views)!==null&&Number(r.views)>0)
+        .sort((x,y)=>Number(y.views)-Number(x.views)).slice(0,10);
+      const sharing=(a.sharing_service||[]).filter(r=>audienceNumber(r.shares)!==null||audienceNumber(r.views)!==null)
+        .sort((x,y)=>(Number(y.shares)||Number(y.views)||0)-(Number(x.shares)||Number(x.views)||0)).slice(0,10);
+      const latest=[...demographics,...countries,...subscribed,...devices,...traffic,...playback,...sharing]
         .map(r=>Date.parse(String(r.capturedAt||''))).filter(Number.isFinite).sort((x,y)=>y-x)[0];
-      return '<div class="studioMetricHint">Фактические обработанные данные YouTube'+(latest?' · снимок '+aDate(new Date(latest).toISOString()):'')+'. Демография — доля зрителей YouTube; остальные блоки — просмотры по доступным измерениям. Отсутствующие/скрытые данные не заменяются нулём.</div>'+
+      return '<div class="studioMetricHint">Фактические обработанные данные YouTube'+(latest?' · снимок '+aDate(new Date(latest).toISOString()):'')+'. В строках показываются все доступные метрики разреза: просмотры, engaged views, средняя длительность/процент, watch time и shares. Пустое не заменяется нулём.</div>'+
         '<div class="audienceGrid">'+
           audienceGroupHtml('Возраст × пол',demographics,r=>audienceAgeLabel(r.value)+' · '+audienceGenderLabel(r.value2),r=>audiencePct(r.viewerPercentage),'YouTube пока не отдал демографию')+
-          audienceGroupHtml('Страны · топ-10',countries,r=>audienceCountryLabel(r.value),r=>aInt(r.views),'Страны пока не обработаны')+
-          audienceGroupHtml('Подписка',subscribed,r=>String(r.value).toUpperCase()==='SUBSCRIBED'?'Подписаны':'Не подписаны',r=>aInt(r.views),'Статус подписки пока не обработан')+
-          audienceGroupHtml('Устройства · топ-10',devices,r=>audienceDeviceLabel(r.value,r.value2),r=>aInt(r.views),'Устройства пока не обработаны')+
-          audienceGroupHtml('Источник просмотра',traffic,r=>audienceTrafficLabel(r.value),r=>aInt(r.views),'Источники пока не обработаны')+
+          audienceGroupHtml('Страны · топ-10',countries,r=>audienceCountryLabel(r.value),audienceMetricSummary,'Страны пока не обработаны')+
+          audienceGroupHtml('Подписка',subscribed,r=>String(r.value).toUpperCase()==='SUBSCRIBED'?'Подписаны':'Не подписаны',audienceMetricSummary,'Статус подписки пока не обработан')+
+          audienceGroupHtml('Устройства · топ-10',devices,r=>audienceDeviceLabel(r.value,r.value2),audienceMetricSummary,'Устройства пока не обработаны')+
+          audienceGroupHtml('Источник просмотра',traffic,r=>audienceTrafficLabel(r.value),audienceMetricSummary,'Источники пока не обработаны')+
+          audienceGroupHtml('Место воспроизведения',playback,r=>audienceGenericLabel(r.value,r.value2),audienceMetricSummary,'Место воспроизведения пока не обработано')+
+          audienceGroupHtml('Сервис, куда делились',sharing,r=>audienceGenericLabel(r.value,r.value2),audienceMetricSummary,'Sharing service пока не обработан')+
         '</div>';
     };
 
@@ -420,10 +442,61 @@
       const body=(rows||[]).map(row=>'<div class="audienceRow"><div class="audienceRowLabel" title="'+esc(row[0])+'">'+esc(row[0])+'</div><div class="audienceRowValue">'+esc(row[1])+'</div></div>').join('');
       return '<div class="audienceGroup"><div class="audienceGroupTitle">'+esc(title)+'</div><div class="audienceRows">'+(body||'<div class="audienceEmpty">Нет данных</div>')+'</div></div>';
     };
+    const telemetryRatioPct=value=>{
+      const n=telemetryNum(value);
+      return n===null?'—':(n*100).toLocaleString('ru-RU',{maximumFractionDigits:2})+'%';
+    };
+    const telemetryNumberText=(value,suffix='',digits=2)=>{
+      const n=telemetryNum(value);
+      return n===null?'—':n.toLocaleString('ru-RU',{maximumFractionDigits:digits})+suffix;
+    };
+    const telemetryArray=value=>Array.isArray(value)&&value.length?value.map(x=>String(x)).join(' → '):'—';
+    const telemetryEvidence=value=>{
+      if(!Array.isArray(value)||!value.length)return '—';
+      return value.map(x=>{
+        if(x&&typeof x==='object')return (x.kind?String(x.kind)+': ':'')+String(x.text??JSON.stringify(x));
+        return String(x);
+      }).join(' | ');
+    };
+    const shortTextHtml=cr=>{
+      const beats=Array.isArray(cr?.textBeats)?cr.textBeats:[];
+      if(!beats.length)return '<div class="muted">Полный текст для этого исторического Short не найден.</div>';
+      return '<div class="tableWrap" style="margin-top:10px"><table class="analyticsTable"><thead><tr><th>#</th><th>Время</th><th>Роль / layout</th><th>Точный текст</th></tr></thead><tbody>'+
+        beats.map(b=>'<tr><td>'+esc(b.index)+'</td><td>'+esc(telemetrySeconds(b.start))+' → '+esc(telemetrySeconds(b.end))+'</td><td>'+esc(telemetryText(b.role))+'<div class="muted">'+esc(telemetryText(b.layout))+'</div></td><td><b>'+esc(b.text||'—')+'</b></td></tr>').join('')+
+        '</tbody></table></div>';
+    };
+    const technicalDetailsHtml=(video,cr,prod,motion,thumb,qc)=>{
+      const p=video.provenance||{};
+      const rows=[
+        ['Video ID',video.videoId],
+        ['Short ID',video.shortId],
+        ['Video SHA-256',p.videoSha256],
+        ['Candidate SHA-256',cr.candidateSha256],
+        ['ShortSpec SHA-256',cr.shortSpecSha256],
+        ['Storyboard hash',cr.storyboardHash],
+        ['Storyboard revision ID',cr.storyboardRevisionId],
+        ['Storyboard revision no',prod.storyboardRevisionNo],
+        ['Source TXT review ID',prod.sourceTextReviewId],
+        ['Video review ID',prod.videoReviewId],
+        ['Thumbnail generation ID',thumb.generation_id],
+        ['Renderer commit',cr.rendererCommit],
+        ['Semantic schema',cr.semanticSchemaVersion],
+        ['Semantic classifier',cr.semanticClassifiedBy],
+        ['Semantic classified at',cr.semanticClassifiedAt?aDate(cr.semanticClassifiedAt):'—'],
+        ['Semantic confidence',telemetryNumberText(cr.semanticConfidence,'',3)],
+        ['Semantic evidence',telemetryEvidence(cr.semanticEvidence)],
+        ['Motion config',motion.config?JSON.stringify(motion.config):'—'],
+        ['Reporting summary',p.reportingSummary&&Object.keys(p.reportingSummary).length?JSON.stringify(p.reportingSummary):'—']
+      ];
+      return '<details style="margin-top:14px"><summary style="cursor:pointer;font-weight:700">Техническая привязка / provenance</summary><div class="audienceGrid" style="margin-top:10px">'+telemetryGroupHtml('Идентификаторы и доказательства',rows)+'</div></details>';
+    };
     const productionTelemetryPanelHtml=video=>{
       if(!video)return '<div class="muted">Нет опубликованных Shorts.</div>';
       const cr=video.creative||{};
       const prod=video.production||{};
+      const pub=video.publication||{};
+      const st=video.studioAdvanced||null;
+      const rates=video.rates||{};
       const t=prod.telemetry||{};
       const process=t.creative_process||{};
       const thumb=t.thumbnail||{};
@@ -432,7 +505,6 @@
       const sem=cr.semanticFeatures||{};
       const motionId=prod.motionProfileId||motion.profile_id||'исторически не записан';
       const musicId=prod.musicId||(t.music||{}).id||'—';
-      const renderer=cr.rendererCommit?String(cr.rendererCommit).slice(0,10):'—';
       const hookFlags=[
         cr.hookHasNumber?'число':null,
         cr.hookStartsWithNumber?'начинается с числа':null,
@@ -440,26 +512,71 @@
       ].filter(Boolean).join(', ')||'без спец. маркеров';
       const topics=Array.isArray(sem.topic_families)?sem.topic_families.join(', '):'—';
       const stakes=Array.isArray(sem.stakes)?sem.stakes.join(', '):'—';
+      const mechanisms=Array.isArray(sem.hook_mechanisms)?sem.hook_mechanisms.join(', '):'—';
       const thumbSize=thumb.width&&thumb.height?String(thumb.width)+'×'+String(thumb.height)+(thumb.aspect_ratio?' · '+thumb.aspect_ratio:''):'—';
       const qcCodec=[qc.videoCodec,qc.audioCodec].filter(Boolean).join(' / ')||'—';
       const lufs=telemetryNum(qc.integratedLufs);
       const ssim=telemetryNum(qc.outroSsim);
-      return '<div class="studioMetricHint">Это фактический паспорт производства конкретного опубликованного ролика. Исторически не записанные поля остаются пустыми; они не восстанавливаются догадками.</div>'+
-        '<div class="audienceGrid">'+
+      const frameText=qc.frames||qc.expectedFrames
+        ? telemetryText(qc.frames)+' / '+telemetryText(qc.expectedFrames)
+        : '—';
+      const newsAge=telemetryNum(pub.newsAgeHoursAtPublish);
+      return '<div class="studioMetricHint">Фактический паспорт опубликованного Short. Здесь теперь выведены все полезные поля, которые backend аналитики хранит для выбранного ролика; технические хэши спрятаны только в раскрываемый блок.</div>'+
+        '<div style="margin-top:14px"><b>Точный текст ролика</b>'+shortTextHtml(cr)+'</div>'+
+        '<div class="audienceGrid" style="margin-top:14px">'+
+          telemetryGroupHtml('Результат · YouTube API',[
+            ['Снимок',video.capturedAt?aDate(video.capturedAt):'—'],
+            ['Просмотры',aInt(video.views)],
+            ['Engaged views',aInt(video.engagedViews)],
+            ['Watch time',telemetryNumberText(video.estimatedMinutesWatched,' мин',1)],
+            ['Средняя длительность',telemetrySeconds(video.averageViewDuration)],
+            ['Средний процент',aPct(video.averageViewPercentage)],
+            ['Лайки',aInt(video.likes)],
+            ['Комментарии',aInt(video.comments)],
+            ['Shares',aInt(video.shares)],
+            ['Подписчики + / −',aInt(video.subscribersGained)+' / '+aInt(video.subscribersLost)],
+            ['Engaged/view rate',telemetryRatioPct(rates.engagedViewRate)],
+            ['Like rate',telemetryRatioPct(rates.likeRate)],
+            ['Comment rate',telemetryRatioPct(rates.commentRate)],
+            ['Share rate',telemetryRatioPct(rates.shareRate)]
+          ])+
           telemetryGroupHtml('Конструкция',[
+            ['Story shape',telemetryText(video.storyShape)],
+            ['Template',telemetryText(video.template)],
+            ['Pace',telemetryText(cr.pace)],
+            ['Selection strength',telemetryText(cr.selectionStrength)],
             ['Длительность',telemetrySeconds(video.durationSeconds)],
             ['Смысловых кадров (beats)',telemetryText(cr.beatCount)],
             ['Средний beat',telemetrySeconds(cr.averageBeatDurationSeconds)],
             ['Первый beat',telemetrySeconds(cr.firstBeatDurationSeconds)],
-            ['Текст',telemetryText(cr.totalTextChars)+' симв. · '+telemetryText(cr.totalLineCount)+' строк'],
-            ['Плотность текста',telemetryNum(cr.textCharsPerSecond)===null?'—':Number(cr.textCharsPerSecond).toLocaleString('ru-RU',{maximumFractionDigits:1})+' симв/с'],
-            ['Акценты',telemetryText(cr.accentSpanCount)],
-            ['Hook',hookFlags]
+            ['Роль первого beat',telemetryText(cr.firstBeatRole)],
+            ['Layout первого beat',telemetryText(cr.firstBeatLayout)],
+            ['Текст первого beat',telemetryText(cr.firstBeatText)],
+            ['Первый beat: символы / строки',telemetryText(cr.firstBeatTextChars)+' / '+telemetryText(cr.firstBeatLineCount)],
+            ['Весь текст: символы / строки',telemetryText(cr.totalTextChars)+' / '+telemetryText(cr.totalLineCount)],
+            ['Плотность текста',telemetryNumberText(cr.textCharsPerSecond,' симв/с',1)],
+            ['Акценты всего',telemetryText(cr.accentSpanCount)],
+            ['Акценты primary / risk / warning',telemetryText(cr.primaryAccentSpanCount)+' / '+telemetryText(cr.riskAccentSpanCount)+' / '+telemetryText(cr.warningAccentSpanCount)],
+            ['Роли',telemetryArray(cr.roleSequence)],
+            ['Layouts',telemetryArray(cr.layoutSequence)],
+            ['Hook',hookFlags],
+            ['Storyboard used',cr.storyboardUsed?'да':'нет'],
+            ['Источников',telemetryText(cr.sourceCount)]
+          ])+
+          telemetryGroupHtml('Публикация / свежесть новости',[
+            ['Опубликовано',video.publishedAt?aDate(video.publishedAt):'—'],
+            ['Локальное время',telemetryText(video.publicationLocalLabel)],
+            ['День недели ISO',telemetryText(pub.weekdayIso)],
+            ['Локальный час',telemetryText(pub.localHour)],
+            ['Слот',telemetryText(pub.slot)],
+            ['Время новости',pub.newsPublishedAt?aDate(pub.newsPublishedAt):'—'],
+            ['Возраст новости при публикации',newsAge===null?'—':telemetryNumberText(newsAge,' ч',1)],
+            ['Источник времени новости',telemetryText(pub.newsTimeSource)]
           ])+
           telemetryGroupHtml('Motion / музыка',[
             ['Motion profile',motionId],
             ['Recipe',telemetryText(motion.recipe_id)+(motion.recipe_version?' v'+motion.recipe_version:'')],
-            ['Renderer commit',renderer],
+            ['Renderer commit',cr.rendererCommit?String(cr.rendererCommit).slice(0,12):'—'],
             ['Музыка',musicId],
             ['Источник музыки',telemetryText(prod.musicSource||(t.music||{}).source)]
           ])+
@@ -472,20 +589,26 @@
             ['Текстовый overlay',thumb.overlay_enabled===true?'да':'нет']
           ])+
           telemetryGroupHtml('Производство',[
-            ['Версий текста',telemetryText(process.text_review_versions)],
-            ['Редакционных правок',telemetryText(process.editorial_revision_count)],
-            ['Storyboard revisions',telemetryText(process.storyboard_revision_count)],
-            ['Попыток рендера',telemetryText(process.render_attempt_count)],
-            ['Рендер',telemetrySeconds(process.render_seconds)],
-            ['Видео на ревью',telemetrySeconds(process.video_review_seconds)],
-            ['От первого review до PUBLIC',telemetryMinutes(process.first_review_to_public_minutes)],
+            ['Версий текста',telemetryText(prod.textReviewVersions??process.text_review_versions)],
+            ['Редакционных правок',telemetryText(prod.editorialRevisionCount??process.editorial_revision_count)],
+            ['Storyboard revisions',telemetryText(prod.storyboardRevisionCount??process.storyboard_revision_count)],
+            ['Попыток рендера',telemetryText(prod.renderAttemptCount??process.render_attempt_count)],
+            ['Рендер',telemetrySeconds(prod.renderSeconds??process.render_seconds)],
+            ['Видео на ревью',telemetrySeconds(prod.videoReviewSeconds??process.video_review_seconds)],
+            ['От первого review до PUBLIC',telemetryMinutes(prod.firstReviewToPublicMinutes??process.first_review_to_public_minutes)],
+            ['От утверждения текста до PUBLIC',telemetryMinutes(prod.approvedTextToPublicMinutes??process.approved_text_to_public_minutes)],
+            ['Первый text review',prod.firstTextReviewAt?aDate(prod.firstTextReviewAt):'—'],
+            ['Текст утверждён',prod.finalTextApprovedAt?aDate(prod.finalTextApprovedAt):'—'],
+            ['MP4 создан для review',prod.videoReviewCreatedAt?aDate(prod.videoReviewCreatedAt):'—'],
+            ['MP4 утверждён',prod.videoApprovedAt?aDate(prod.videoApprovedAt):'—'],
             ['Канал решения MP4',telemetryText(process.video_decision_channel)]
           ])+
           telemetryGroupHtml('Render QC',[
             ['Файл',telemetryBytes(qc.bytes)],
-            ['Фактическая длительность',telemetrySeconds(qc.durationSeconds)],
+            ['Фактическая / ожидаемая длительность',telemetrySeconds(qc.durationSeconds)+' / '+telemetrySeconds(qc.expectedDurationSeconds)],
             ['Разрешение',qc.width&&qc.height?telemetryText(qc.width)+'×'+telemetryText(qc.height):'—'],
             ['FPS',telemetryText(qc.fps)],
+            ['Кадры / ожидаемые',frameText],
             ['Кодеки',qcCodec],
             ['Integrated loudness',lufs===null?'—':lufs.toLocaleString('ru-RU',{maximumFractionDigits:1})+' LUFS'],
             ['Outro SSIM',ssim===null?'—':ssim.toLocaleString('ru-RU',{maximumFractionDigits:3})]
@@ -493,14 +616,40 @@
           telemetryGroupHtml('AI-разметка содержания',[
             ['Темы',topics],
             ['Ставки / stakes',stakes],
+            ['Тип утверждения',telemetryText(sem.claim_type)],
+            ['Охват аудитории',telemetryText(sem.audience_scope)],
+            ['Механизмы hook',mechanisms],
             ['Новизна',telemetryText(sem.novelty)],
             ['Срочность',telemetryText(sem.immediacy)],
             ['Прямота hook',telemetryText(sem.hook_directness)],
             ['Человеческая значимость',telemetryText(sem.human_relevance)],
             ['Широта аудитории',telemetryText(sem.audience_breadth)],
+            ['Знакомость сущности',telemetryText(sem.entity_familiarity)],
+            ['Нужный контекст',telemetryText(sem.prerequisite_context)],
             ['Масштаб последствий',telemetryText(sem.consequence_magnitude)]
           ])+
-        '</div>';
+          (st?telemetryGroupHtml('YouTube Studio Advanced Mode',[
+            ['Импорт',st.importId?'#'+st.importId:'—'],
+            ['Период',telemetryText(st.reportStart)+' — '+telemetryText(st.reportEnd)],
+            ['Импортирован',st.importedAt?aDate(st.importedAt):'—'],
+            ['Дата публикации видео',telemetryText(st.videoPublishDate)],
+            ['Продолжительность',telemetrySeconds(st.durationSeconds)],
+            ['Заинтересованные просмотры',aInt(st.engagedViews)],
+            ['Средняя длительность',telemetrySeconds(st.averageViewDurationSeconds)],
+            ['Средний процент',aPct(st.averageViewPercentage)],
+            ['Продолжили смотреть',aPct(st.stayedToWatchPct)],
+            ['Свайпнули',aPct(st.swipedAwayPct)],
+            ['Уникальные зрители',aInt(st.uniqueViewers)],
+            ['Просмотры',aInt(st.views)],
+            ['Просмотры (совместные)',aInt(st.collaborativeViews)],
+            ['Время просмотра',telemetryNumberText(st.watchHours,' ч',3)],
+            ['Подписчики',aInt(st.subscribers)],
+            ['Показы значков',aInt(st.thumbnailImpressions)],
+            ['CTR значков',aPct(st.thumbnailCtrPct)],
+            ['Файл',telemetryText(st.originalFilename)]
+          ]):'')+
+        '</div>'+
+        technicalDetailsHtml(video,cr,prod,motion,thumb,qc);
     };
 
     const coverageAgeHours=video=>{
