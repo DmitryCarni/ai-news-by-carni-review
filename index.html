@@ -597,6 +597,19 @@
       for(const r of data.milestones||[]){if(!map.has(r.videoId))map.set(r.videoId,{});map.get(r.videoId)[r.milestoneHours]=r}
       const ids=[...new Set((data.milestones||[]).map(x=>x.videoId))];
 
+      const extraEngagementRows=sortedVideos.map(r=>{
+        const x=r.additionalEngagement||{};
+        const uniqueDay=x.latestUniqueViewersDay?String(x.latestUniqueViewersDay).slice(0,10):'—';
+        return '<tr>'+
+          '<td><b>'+esc(r.title||r.shortId||r.videoId)+'</b><div class="muted">'+esc(r.videoId||'')+'</div></td>'+
+          '<td>'+esc(x.dislikes===null||x.dislikes===undefined?'—':aInt(x.dislikes))+'</td>'+
+          '<td>'+esc(x.videosAddedToPlaylists===null||x.videosAddedToPlaylists===undefined?'—':aInt(x.videosAddedToPlaylists))+'</td>'+
+          '<td>'+esc(x.videosRemovedFromPlaylists===null||x.videosRemovedFromPlaylists===undefined?'—':aInt(x.videosRemovedFromPlaylists))+'</td>'+
+          '<td>'+esc(x.latestDailyUniqueViewers===null||x.latestDailyUniqueViewers===undefined?'—':aInt(x.latestDailyUniqueViewers))+'</td>'+
+          '<td>'+esc(uniqueDay)+'</td>'+
+        '</tr>';
+      }).join('');
+
       const studioEntryRows=sortedVideos.map(r=>{
         const s=r.studio||{};
         const hasShown=s.shownInFeed!==null&&s.shownInFeed!==undefined;
@@ -646,6 +659,7 @@
       '<section class="card"><b>Полнота по каждому Short</b>'+coverageMatrixHtml(data.videos||[])+'</section>'+
       '<section class="card"><b>Паспорт ролика · производство и креатив</b><div class="retentionToolbar">'+(telemetryVideos.length?'<select class="retentionSelect" id="telemetryVideoSelect">'+telemetryOptions+'</select>':'<span class="muted">Нет данных.</span>')+'</div>'+productionTelemetryPanelHtml(telemetryVideo)+'</section>'+
       '<section class="card"><b>Аудитория</b><div class="retentionToolbar">'+(audienceVideos.length?'<select class="retentionSelect" id="audienceVideoSelect">'+audienceOptions+'</select>':'<span class="muted">YouTube ещё не отдал обработанные данные аудитории.</span>')+'</div>'+audiencePanelHtml(audienceVideo)+'</section>'+
+      '<section class="card"><b>Дополнительное вовлечение</b><div class="studioMetricHint">Дизлайки и действия с плейлистами — накопительные показатели ролика. «Уникальные зрители» здесь показаны за последний доступный обработанный день; дневные значения нельзя складывать между собой.</div><div class="tableWrap" style="margin-top:10px"><table class="analyticsTable"><thead><tr><th>Short</th><th>Дизлайки</th><th>В плейлист +</th><th>Из плейлиста −</th><th>Уникальные зрители · день</th><th>Дата</th></tr></thead><tbody>'+extraEngagementRows+'</tbody></table></div></section>'+
       '<section class="card"><b>YouTube Studio · вход в просмотр</b><div class="studioMetricHint">Studio-показатели держим отдельным источником: «Показано в ленте», «Продолжили смотреть» и «Свайпнули». Таблица только для чтения; пока данные пополняются через импорт Studio ZIP. Пустое значение означает, что источник его ещё не дал.</div><div class="tableWrap" style="margin-top:10px"><table class="analyticsTable"><thead><tr><th>Short</th><th>Показано в ленте</th><th>Продолжили смотреть</th><th>Свайпнули</th><th>Источник</th></tr></thead><tbody>'+studioEntryRows+'</tbody></table></div></section>'+
       '<section class="card"><b>Кривая удержания</b><div class="retentionToolbar">'+(retentionVideos.length?'<select class="retentionSelect" id="retentionVideoSelect">'+retentionOptions+'</select>':'<span class="muted">YouTube ещё не отдал ни одной кривой.</span>')+'</div>'+(retentionVideo?retentionChartHtml(retentionVideo):'')+'</section>'+
       '<section class="card"><b>Сравнение кривых удержания</b><div class="studioMetricHint">Описательное сравнение без автоматических корреляций и «победителей»: текущая выборка слишком мала для устойчивых выводов о факторах разгона.</div>'+retentionCompareHtml(retentionVideos)+'</section>'+
