@@ -802,6 +802,9 @@
       const o=data.overview||{},ch=data.channel||{},count=Number(o.trackedPublicShorts||0),coverage=o.evidenceCoverage||{},ret=Number(coverage.retentionCurve||0);
       const coverageTotal=Number(coverage.total||count||0);
       const sortedVideos=analyticsSortedVideos(data.videos||[]);
+      if(!sortedVideos.some(v=>v.videoId===analyticsFocusVideoId))analyticsFocusVideoId=sortedVideos[0]?.videoId||'';
+      const focusVideo=sortedVideos.find(v=>v.videoId===analyticsFocusVideoId)||sortedVideos[0]||null;
+      const focusVideoOptions=sortedVideos.map(v=>'<option value="'+esc(v.videoId)+'" '+(v.videoId===focusVideo?.videoId?'selected':'')+'>'+esc(v.title||v.shortId||v.videoId)+'</option>').join('');
       const retentionVideos=sortedVideos.filter(v=>Array.isArray(v.retentionCurve)&&v.retentionCurve.length>0);
       if(!retentionVideos.some(v=>v.videoId===analyticsRetentionVideoId))analyticsRetentionVideoId=retentionVideos[0]?.videoId||'';
       const retentionVideo=retentionVideos.find(v=>v.videoId===analyticsRetentionVideoId)||retentionVideos[0]||null;
