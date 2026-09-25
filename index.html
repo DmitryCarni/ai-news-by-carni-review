@@ -24,6 +24,42 @@
     .coverageMatrixTable{min-width:980px}.coverageMatrixTable td,.coverageMatrixTable th{text-align:center}.coverageMatrixTable td:first-child,.coverageMatrixTable th:first-child{text-align:left}.coverageBadge{display:inline-flex;align-items:center;justify-content:center;min-width:62px;border:1px solid #2a4058;border-radius:999px;padding:3px 7px;font-size:10px;font-weight:900;line-height:1.15;white-space:nowrap}.coverageBadge.ok{border-color:#2c755d;background:#0e2a22;color:#9af0c5}.coverageBadge.wait{border-color:#7b632d;background:#2d2510;color:#f3d57e}.coverageBadge.missing{border-color:#3b4b5c;background:#101820;color:#92a6b9}.coverageBadge.late{border-color:#8f414b;background:#32171d;color:#ff9aa5}.coverageAge{font-size:10px;color:var(--muted);margin-top:3px}
     @media(max-width:900px){.audienceGrid{grid-template-columns:1fr}.analyticsKpis{grid-template-columns:repeat(2,minmax(0,1fr))}.coverageGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.retentionStats{grid-template-columns:repeat(3,minmax(0,1fr))}.barRow{grid-template-columns:minmax(110px,180px) 1fr 70px}.studioMetricRow{grid-template-columns:1fr 1fr}.studioMetricTitle{grid-column:1/-1}.studioSave{grid-column:1/-1}}
     @media(max-width:650px){.hero,.queueItem{grid-template-columns:1fr}.top{align-items:flex-start;flex-direction:column}.pairCode{font-size:38px}.analyticsKpis{grid-template-columns:1fr 1fr}.barRow{grid-template-columns:1fr}.barValue{text-align:left}.barName{white-space:normal}}
+
+    .analyticsModeBar{position:sticky;top:0;z-index:20;display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:10px 0;background:linear-gradient(180deg,var(--bg) 72%,rgba(7,16,29,.92));backdrop-filter:blur(8px)}
+    .analyticsModeBtn{border:1px solid #315276;background:#0d1d2e;color:#a9bdd1;border-radius:999px;padding:8px 13px;font-size:12px;font-weight:900;cursor:pointer}
+    .analyticsModeBtn.active{border-color:var(--cyan);background:#123b55;color:#fff;box-shadow:0 0 0 1px #42b7ff33 inset}
+    .analyticsModeHint{font-size:11px;color:var(--muted);margin-left:4px}
+    .analyticsOverviewIntro{display:grid;grid-template-columns:1.3fr .7fr;gap:12px}
+    .analyticsOverviewLead{font-size:18px;font-weight:950;line-height:1.2}
+    .analyticsOverviewCopy{font-size:12px;color:var(--muted);line-height:1.5;margin-top:6px}
+    .analyticsQuickGrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:10px}
+    .analyticsQuick{border:1px solid #1e354f;border-radius:10px;background:#08131f;padding:10px}
+    .analyticsQuickValue{font-size:20px;font-weight:950}
+    .analyticsQuickLabel{font-size:10px;color:var(--muted);margin-top:4px}
+    .analyticsFocus{display:grid;gap:12px}
+    .analyticsFocusHead{display:grid;grid-template-columns:minmax(0,1fr) minmax(260px,460px);gap:12px;align-items:end}
+    .analyticsFocusTitle{font-size:20px;font-weight:950;line-height:1.2}
+    .analyticsFocusKpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px}
+    .analyticsFocusGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+    .analyticsFocusGrid .card{margin:0}
+    .analyticsFocusWide{grid-column:1/-1}
+    .analyticsSectionHead{display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .analyticsCollapse{border:1px solid #29425f;background:#0b1929;color:#a8bfd5;border-radius:8px;padding:5px 8px;font-size:10px;font-weight:850;cursor:pointer}
+    .analyticsRaw.collapsed>:not(.analyticsSectionHead){display:none}
+    .analyticsRaw.collapsed{padding-bottom:12px}
+    .analyticsRaw{transition:border-color .15s ease}
+    .analyticsRaw:hover{border-color:#315276}
+    .analyticsModeOverview .analyticsRaw{display:none}
+    .analyticsModeShort .analyticsMainSection{display:none}
+    .analyticsModeAll .analyticsFocus{display:none}
+    .analyticsModeOverview .analyticsFocus{display:none}
+    .analyticsModeShort .analyticsKpis{display:none}
+    .analyticsModeAll .analyticsOverviewOnly{display:none}
+    .analyticsModeShort .analyticsOverviewOnly{display:none}
+    .analyticsHumanSummary{border-color:#2a5272;background:linear-gradient(135deg,#0c2136,#091421 70%)}
+    .analyticsSectionEyebrow{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:#7f9ab5;margin-bottom:5px;font-weight:850}
+    @media(max-width:1050px){.analyticsFocusKpis{grid-template-columns:repeat(3,minmax(0,1fr))}.analyticsQuickGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.analyticsOverviewIntro{grid-template-columns:1fr}}
+    @media(max-width:760px){.analyticsFocusHead{grid-template-columns:1fr}.analyticsFocusGrid{grid-template-columns:1fr}.analyticsFocusWide{grid-column:auto}.analyticsFocusKpis{grid-template-columns:repeat(2,minmax(0,1fr))}.analyticsModeHint{width:100%;margin-left:0}}
   </style>
 </head>
 <body>
