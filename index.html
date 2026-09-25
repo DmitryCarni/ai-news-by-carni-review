@@ -947,6 +947,66 @@
         '</tr>';
       }).join('');
 
+      const focusStudio=focusVideo?.studio||{};
+      const focusAdvanced=focusVideo?.studioAdvanced||{};
+      const focusFreshness=focusVideo?.storyFreshness||{};
+      const focusMilestones=focusVideo?map.get(focusVideo.videoId)||{}:{};
+      const focusCalendar=Array.isArray(focusVideo?.studioEntryCalendarMilestones)?focusVideo.studioEntryCalendarMilestones:[];
+      const focusCalendarByAge=new Map(focusCalendar.map(item=>[Number(item?.targetHours),item]));
+      const focusShown=focusStudio.shownInFeed;
+      const focusEstimate=focusAdvanced.feedOpportunityEstimate;
+      const focusStayed=focusStudio.stayedToWatchPct;
+      const focusSwiped=focusStudio.swipedAwayPct;
+      const focusSourcePublished=focusFreshness.hasSourceTimeEvidence===true
+        ? freshnessPointLabel(focusFreshness.sourcePrecision,focusFreshness.sourcePublishedAt,focusFreshness.sourcePublishedDate)
+        : '—';
+      const focusEventKnown=focusFreshness.hasEventTimeEvidence===true
+        ? freshnessPointLabel(focusFreshness.eventPrecision,focusFreshness.firstKnownEventAt,focusFreshness.firstKnownEventDate)
+        : '—';
+      const focusSourceAge=freshnessAgeLabel(focusFreshness.sourceAgeHoursAtPublish,focusFreshness.sourceAgeCalendarDaysAtPublish);
+      const focusEventAge=freshnessAgeLabel(focusFreshness.eventAgeHoursAtPublish,focusFreshness.eventAgeCalendarDaysAtPublish);
+      const focusAgeCells=[1,3,6,12,24,48,72,168].map(hours=>{
+        const item=focusMilestones[hours];
+        return '<div class="analyticsQuick"><div class="analyticsQuickValue">'+esc(item?.views===null||item?.views===undefined?'—':aInt(item.views))+'</div><div class="analyticsQuickLabel">'+hours+'ч · просмотры</div></div>';
+      }).join('');
+      const focusCalendarRows=[24,48,72,168].map(hours=>{
+        const item=focusCalendarByAge.get(hours);
+        const label=hours===168?'7 дней':String(hours/24)+' день'+(hours===24?'':'я');
+        return '<tr><td>'+esc(label)+'</td><td><b>'+esc(item?.stayedToWatchPct===null||item?.stayedToWatchPct===undefined?'—':aPct(item.stayedToWatchPct))+'</b></td><td>'+esc(item?.swipedAwayPct===null||item?.swipedAwayPct===undefined?'—':aPct(item.swipedAwayPct))+'</td></tr>';
+      }).join('');
+      const focusPanelHtml=focusVideo
+        ? '<div class="analyticsFocus">'+
+          '<section class="card analyticsHumanSummary"><div class="analyticsFocusHead"><div><div class="analyticsSectionEyebrow">Один Short</div><div class="analyticsFocusTitle">'+esc(focusVideo.title||focusVideo.shortId||focusVideo.videoId)+'</div><div class="analyticsOverviewCopy">Сначала результат и поведение зрителя, затем причины и технические подробности.</div></div><select class="retentionSelect" id="analyticsFocusVideo">'+focusVideoOptions+'</select></div></section>'+
+          '<div class="analyticsFocusKpis">'+[
+            ['Просмотры',aInt(focusVideo.views)],
+            ['Возраст',aAge(focusVideo.ageHours)],
+            ['Средний просмотр',aPct(focusVideo.averageViewPercentage)],
+            ['Продолжили смотреть',focusStayed===null||focusStayed===undefined?'—':aPct(focusStayed)],
+            ['Лайки',aInt(focusVideo.likes)],
+            ['Подписки +',aInt(focusVideo.subscribersGained)]
+          ].map(x=>'<div class="kpi"><div class="kpiValue">'+esc(x[1])+'</div><div class="kpiLabel">'+esc(x[0])+'</div></div>').join('')+'</div>'+
+          '<section class="card"><div class="analyticsSectionEyebrow">Разгон</div><b>Просмотры по возрасту ролика</b><div class="analyticsQuickGrid">'+focusAgeCells+'</div></section>'+
+          '<div class="analyticsFocusGrid">'+
+            '<section class="card"><div class="analyticsSectionEyebrow">Вход в просмотр</div><b>Остановился зритель или свайпнул</b><div class="analyticsQuickGrid">'+
+              '<div class="analyticsQuick"><div class="analyticsQuickValue">'+esc(focusShown===null||focusShown===undefined?'—':aInt(focusShown))+'</div><div class="analyticsQuickLabel">Показано в ленте · точно</div></div>'+
+              '<div class="analyticsQuick"><div class="analyticsQuickValue">'+esc(focusEstimate===null||focusEstimate===undefined?'—':'≈ '+aInt(focusEstimate))+'</div><div class="analyticsQuickLabel">Возможностей показа · оценка</div></div>'+
+              '<div class="analyticsQuick"><div class="analyticsQuickValue">'+esc(focusStayed===null||focusStayed===undefined?'—':aPct(focusStayed))+'</div><div class="analyticsQuickLabel">Продолжили смотреть</div></div>'+
+              '<div class="analyticsQuick"><div class="analyticsQuickValue">'+esc(focusSwiped===null||focusSwiped===undefined?'—':aPct(focusSwiped))+'</div><div class="analyticsQuickLabel">Свайпнули</div></div>'+
+            '</div><div class="studioMetricHint">Точный счётчик «Показано в ленте» и расчётная оценка намеренно не смешиваются.</div></section>'+
+            '<section class="card"><div class="analyticsSectionEyebrow">Свежесть</div><b>Насколько новость была свежей</b><div class="analyticsQuickGrid">'+
+              '<div class="analyticsQuick"><div class="analyticsQuickValue">'+esc(focusSourcePublished)+'</div><div class="analyticsQuickLabel">Источник опубликован</div></div>'+
+              '<div class="analyticsQuick"><div class="analyticsQuickValue">'+esc(focusEventKnown)+'</div><div class="analyticsQuickLabel">Событие известно с</div></div>'+
+              '<div class="analyticsQuick"><div class="analyticsQuickValue">'+esc(focusSourceAge)+'</div><div class="analyticsQuickLabel">Возраст источника при публикации</div></div>'+
+              '<div class="analyticsQuick"><div class="analyticsQuickValue">'+esc(focusEventAge)+'</div><div class="analyticsQuickLabel">Возраст события при публикации</div></div>'+
+            '</div></section>'+
+            '<section class="card"><div class="analyticsSectionEyebrow">Вход · одинаковый возраст</div><b>Продолжили / свайпнули</b><div class="tableWrap" style="margin-top:10px"><table class="analyticsTable"><thead><tr><th>Возраст</th><th>Продолжили</th><th>Свайпнули</th></tr></thead><tbody>'+focusCalendarRows+'</tbody></table></div></section>'+
+            '<section class="card"><div class="analyticsSectionEyebrow">Аудитория</div><b>Кто смотрит</b>'+audiencePanelHtml(focusVideo)+'</section>'+
+            '<section class="card analyticsFocusWide"><div class="analyticsSectionEyebrow">Удержание</div><b>Где зритель остаётся, а где уходит</b>'+(Array.isArray(focusVideo.retentionCurve)&&focusVideo.retentionCurve.length?retentionChartHtml(focusVideo):'<div class="muted" style="margin-top:10px">Кривая удержания для этого Short ещё не обработана YouTube.</div>')+'</section>'+
+            '<section class="card analyticsFocusWide"><div class="analyticsSectionEyebrow">Производство</div><b>Что именно было сделано в ролике</b>'+productionTelemetryPanelHtml(focusVideo)+'</section>'+
+          '</div>'+
+        '</div>'
+        : '<div class="analyticsFocus"><section class="card"><b>Short ещё не выбран</b></section></div>';
+
       const signals=[];
       if(count<30)signals.push({c:'warn',t:'Выборка пока маленькая для факторных выводов',d:'Сейчас отслеживается '+count+' реальных Shorts. Используем данные для описания, контроля качества сбора и формирования гипотез — не для автоматического ранжирования факторов или причинных выводов.'});
       if(ret<count)signals.push({c:'warn',t:'Кривая удержания пока не заполнена',d:'Пер-позиционная retention curve есть для '+ret+' из '+count+' роликов. Это отдельный пробел данных; средняя длительность просмотра её не заменяет.'});
