@@ -1072,6 +1072,54 @@
       )+'</tbody></table></div></section>'+
       '<section class="card"><b>Что реально видно из данных</b><div class="signals" style="margin-top:10px">'+signals.map(s=>'<div class="signal '+s.c+'"><b>'+esc(s.t)+'</b><br>'+esc(s.d)+'</div>').join('')+'</div></section></div>';
 
+      const rawSectionPrefixes=[
+        'Полнота по каждому Short',
+        'Паспорт ролика · производство и креатив',
+        'Аудитория',
+        'Дополнительное вовлечение',
+        'Свежесть новости',
+        'YouTube Studio · вход в просмотр',
+        'Показано в ленте · точный счётчик по возрасту',
+        'Кривая удержания',
+        'Срез ',
+        'Возрастные срезы · просмотры'
+      ];
+      document.querySelectorAll('.portal.analytics > section.card').forEach(section=>{
+        section.classList.add('analyticsMainSection');
+        const titleNode=section.querySelector(':scope > b');
+        const title=String(titleNode?.textContent||'').trim();
+        const isRaw=rawSectionPrefixes.some(prefix=>title.startsWith(prefix));
+        if(!isRaw)return;
+        section.classList.add('analyticsRaw','collapsed');
+        if(titleNode){
+          const head=document.createElement('div');
+          head.className='analyticsSectionHead';
+          titleNode.before(head);
+          head.appendChild(titleNode);
+          const btn=document.createElement('button');
+          btn.type='button';
+          btn.className='analyticsCollapse';
+          btn.textContent='Развернуть';
+          btn.onclick=()=>{
+            const collapsed=section.classList.toggle('collapsed');
+            btn.textContent=collapsed?'Развернуть':'Свернуть';
+          };
+          head.appendChild(btn);
+        }
+      });
+
+      document.querySelectorAll('[data-analytics-mode]').forEach(btn=>btn.onclick=()=>{
+        const mode=String(btn.dataset.analyticsMode||'overview');
+        analyticsViewMode=['overview','short','all'].includes(mode)?mode:'overview';
+        renderAnalytics(data,selectedAge);
+      });
+      const focusSelect=document.getElementById('analyticsFocusVideo');
+      if(focusSelect)focusSelect.onchange=()=>{
+        analyticsFocusVideoId=String(focusSelect.value||'');
+        analyticsViewMode='short';
+        renderAnalytics(data,selectedAge);
+      };
+
       document.getElementById('analyticsHome').onclick=()=>location.href=location.pathname;
       const studioZipInput=document.getElementById('studioZipInput');
       const studioZipImport=document.getElementById('studioZipImport');
