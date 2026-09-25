@@ -225,6 +225,30 @@
       return j;
     }
 
+    async function portalDownload(path,fallbackName){
+      const token=localStorage.getItem(portalKey)||'';
+      if(!/^[0-9a-f]{64}$/i.test(token)) throw new Error('Браузер не привязан');
+      const r=await fetch(portalApi+path,{headers:{'x-review-portal-token':token},cache:'no-store'});
+      if(r.status===401){localStorage.removeItem(portalKey);throw new Error('Доступ браузера истёк')}
+      if(!r.ok){
+        const j=await r.json().catch(()=>({}));
+        throw new Error(j.error||('HTTP '+r.status));
+      }
+      const blob=await r.blob();
+      const disposition=String(r.headers.get('content-disposition')||'');
+      const match=disposition.match(/filename="?([^";]+)"?/i);
+      const filename=match?.[1]||fallbackName||'download.bin';
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement('a');
+      a.href=url;
+      a.download=filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(()=>URL.revokeObjectURL(url),1500);
+      return {filename,sha256:r.headers.get('x-research-pack-sha256')||null};
+    }
+
     async function portalUpload(path,file){
       const token=localStorage.getItem(portalKey)||'';
       if(!/^[0-9a-f]{64}$/i.test(token)) throw new Error('Браузер не привязан');
@@ -799,7 +823,7 @@
       if(r24.length>=2)signals.push({c:'good',t:'24-часовые срезы уже сравнимы',d:'Диапазон сейчас '+aInt(r24[0].views)+'–'+aInt(r24[r24.length-1].views)+' просмотров. Причину разницы пока не приписываем одному фактору.'});
       if(!signals.length)signals.push({c:'good',t:'База уже пригодна для наблюдений',d:'Можно искать повторяющиеся паттерны, но не объявлять причинность без дополнительной проверки.'});
 
-      app.innerHTML='<div class="portal analytics"><div class="top"><div><div class="brand">AI NEWS BY CARNI · ANALYTICS</div><div class="sub">Сравнение Shorts по одинаковому возрасту · сбор каждые '+esc(data.source?.collectorCadenceHours||6)+'ч</div></div><div class="topActions"><input id="studioZipInput" type="file" accept=".zip,application/zip" hidden><button class="btn" id="studioZipImport">Импорт Studio ZIP</button><button class="btn" id="analyticsExport">Скачать датасет JSON</button><button class="btn" id="analyticsHome">На главную</button></div></div>'+
+      app.innerHTML='<div class="portal analytics"><div class="top"><div><div class="brand">AI NEWS BY CARNI · ANALYTICS</div><div class="sub">Сравнение Shorts по одинаковому возрасту · сбор каждые '+esc(data.source?.collectorCadenceHours||6)+'ч</div></div><div class="topActions"><input id="studioZipInput" type="file" accept=".zip,application/zip" hidden><button class="btn" id="studioZipImport">Импорт Studio ZIP</button><button class="btn" id="deepResearchPack">Пакет для Deep Research</button><button class="btn" id="analyticsExport">Скачать датасет JSON</button><button class="btn" id="analyticsHome">На главную</button></div></div>'+
       '<div class="analyticsKpis">'+[
         ['Подписчики',aInt(ch.subscribers)],
         ['Видео на канале',aInt(ch.videos)],
@@ -860,6 +884,22 @@
           setTimeout(()=>{studioZipImport.textContent=before;studioZipImport.disabled=false},1400);
         }finally{
           studioZipInput.value='';
+        }
+      };
+      document.getElementById('deepResearchPack').onclick=async()=>{
+        const btn=document.getElementById('deepResearchPack');
+        const before=btn.textContent;
+        btn.disabled=true;
+        btn.textContent='Собираю пакет…';
+        try{
+          const stamp=new Date().toISOString().slice(0,10);
+          await portalDownload('/analytics/deep-research-pack?mode=weekly','ai-news-deep-research-weekly-'+stamp+'.zip');
+          btn.textContent='Пакет готов';
+          setTimeout(()=>{btn.textContent=before;btn.disabled=false},1400);
+        }catch(e){
+          btn.textContent='Ошибка';
+          alert('Не удалось собрать пакет Deep Research: '+String(e.message||e));
+          setTimeout(()=>{btn.textContent=before;btn.disabled=false},1400);
         }
       };
       document.getElementById('analyticsExport').onclick=async()=>{
