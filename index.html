@@ -241,6 +241,33 @@
       if(!r.ok||!j.ok)throw new Error(j.error||('HTTP '+r.status));
       return j;
     }
+    async function portalDownload(path,fallbackName){
+      const token=localStorage.getItem(portalKey)||'';
+      if(!/^[0-9a-f]{64}$/i.test(token)) throw new Error('Браузер не привязан');
+      const r=await fetch(portalApi+path,{headers:{'x-review-portal-token':token},cache:'no-store'});
+      if(r.status===401){localStorage.removeItem(portalKey);throw new Error('Доступ браузера истёк')}
+      if(!r.ok){
+        const j=await r.json().catch(()=>({}));
+        throw new Error(j.error||('HTTP '+r.status));
+      }
+      const blob=await r.blob();
+      const disposition=String(r.headers.get('content-disposition')||'');
+      const match=disposition.match(/filename="?([^";]+)"?/i);
+      const filename=(match&&match[1])||fallbackName||'download.bin';
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement('a');
+      a.href=url;
+      a.download=filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(()=>URL.revokeObjectURL(url),1200);
+      return {
+        filename,
+        sha256:r.headers.get('x-research-pack-sha256')||null,
+      };
+    }
+
 
     function analyticsName(data,videoId,shortId){
       const v=(data.videos||[]).find(x=>x.videoId===videoId);
@@ -251,6 +278,7 @@
     let analyticsRetentionVideoId='';
     let analyticsAudienceVideoId='';
     let analyticsTelemetryVideoId='';
+    let analyticsResearchStatus=null;
     const retentionNearest=(curve,target)=>{
       let best=null,bestDistance=Infinity;
       for(const point of curve||[]){
@@ -799,7 +827,7 @@
       if(r24.length>=2)signals.push({c:'good',t:'24-часовые срезы уже сравнимы',d:'Диапазон сейчас '+aInt(r24[0].views)+'–'+aInt(r24[r24.length-1].views)+' просмотров. Причину разницы пока не приписываем одному фактору.'});
       if(!signals.length)signals.push({c:'good',t:'База уже пригодна для наблюдений',d:'Можно искать повторяющиеся паттерны, но не объявлять причинность без дополнительной проверки.'});
 
-      app.innerHTML='<div class="portal analytics"><div class="top"><div><div class="brand">AI NEWS BY CARNI · ANALYTICS</div><div class="sub">Сравнение Shorts по одинаковому возрасту · сбор каждые '+esc(data.source?.collectorCadenceHours||6)+'ч</div></div><div class="topActions"><input id="studioZipInput" type="file" accept=".zip,application/zip" hidden><button class="btn" id="studioZipImport">Импорт Studio ZIP</button><button class="btn" id="analyticsExport">Скачать датасет JSON</button><button class="btn" id="analyticsHome">На главную</button></div></div>'+
+      app.innerHTML='<div class="portal analytics"><div class="top"><div><div class="brand">AI NEWS BY CARNI · ANALYTICS</div><div class="sub">Сравнение Shorts по одинаковому возрасту · сбор каждые '+esc(data.source?.collectorCadenceHours||6)+'ч</div></div><div class="topActions"><input id="studioZipInput" type="file" accept=".zip,application/zip" hidden><button class="btn" id="studioZipImport">Импорт Studio ZIP</button><button class="btn green" id="deepResearchPack">Пакет Deep Research</button><button class="btn" id="analyticsExport">Скачать датасет JSON</button><button class="btn" id="analyticsHome">На главную</button></div></div>'+
       '<div class="analyticsKpis">'+[
         ['Подписчики',aInt(ch.subscribers)],
         ['Видео на канале',aInt(ch.videos)],
@@ -817,6 +845,14 @@
         ['Retention curve',Number(coverage.retentionCurve||0)+' / '+coverageTotal],
         ['Демография',Number(coverage.demographics||0)+' / '+coverageTotal],
         ['Reporting bulk',Number(coverage.reporting||0)+' / '+coverageTotal]
+      ].map(x=>'<div class="coverageCell"><div class="coverageValue">'+esc(x[1])+'</div><div class="coverageLabel">'+esc(x[0])+'</div></div>').join('')+'</div></section>'+
+      '<section class="card"><b>Deep Research · недельный цикл</b><div class="studioMetricHint">После пятничного Studio ZIP скачай один пакет и отдай его Deep Research целиком. Внутри уже лежат контракт исследования, накопительная Research State, предыдущий принятый отчёт (если есть) и полный датасет.</div><div class="coverageGrid">'+[
+        ['Research State','rev '+Number(analyticsResearchStatus?.researchState?.revision||1)],
+        ['Зрелые + retention',Number(analyticsResearchStatus?.current?.mature_short_count||0)+' / '+Number(analyticsResearchStatus?.current?.public_short_count||count)],
+        ['Последний Studio ZIP',aDate(analyticsResearchStatus?.current?.studio_latest_imported_at)],
+        ['Последний пакет',aDate(analyticsResearchStatus?.latestPack?.generated_at)],
+        ['Последний отчёт',aDate(analyticsResearchStatus?.latestReport?.accepted_at)],
+        ['Контракт',String(analyticsResearchStatus?.contractVersion||'—')]
       ].map(x=>'<div class="coverageCell"><div class="coverageValue">'+esc(x[1])+'</div><div class="coverageLabel">'+esc(x[0])+'</div></div>').join('')+'</div></section>'+
       '<section class="card"><b>Полнота по каждому Short</b>'+coverageMatrixHtml(data.videos||[])+'</section>'+
       '<section class="card"><b>Паспорт ролика · производство и креатив</b><div class="retentionToolbar">'+(telemetryVideos.length?'<select class="retentionSelect" id="telemetryVideoSelect">'+telemetryOptions+'</select>':'<span class="muted">Нет данных.</span>')+'</div>'+productionTelemetryPanelHtml(telemetryVideo)+'</section>'+
@@ -860,6 +896,24 @@
           setTimeout(()=>{studioZipImport.textContent=before;studioZipImport.disabled=false},1400);
         }finally{
           studioZipInput.value='';
+        }
+      };
+      document.getElementById('deepResearchPack').onclick=async()=>{
+        const btn=document.getElementById('deepResearchPack');
+        const before=btn.textContent;
+        btn.disabled=true;
+        btn.textContent='Собираю пакет…';
+        try{
+          const stamp=new Date().toISOString().slice(0,10);
+          const result=await portalDownload('/analytics/deep-research-pack?mode=weekly','ai-news-deep-research-weekly-'+stamp+'.zip');
+          btn.textContent='Пакет скачан';
+          if(result.sha256)btn.title='SHA-256: '+result.sha256;
+          analyticsResearchStatus=await portalGet('/analytics/deep-research-status').catch(()=>analyticsResearchStatus);
+          setTimeout(()=>{btn.textContent=before;btn.disabled=false},1500);
+        }catch(e){
+          btn.textContent='Ошибка';
+          alert('Не удалось собрать Deep Research Pack: '+String(e.message||e));
+          setTimeout(()=>{btn.textContent=before;btn.disabled=false},1500);
         }
       };
       document.getElementById('analyticsExport').onclick=async()=>{
@@ -915,7 +969,11 @@
     async function loadAnalytics(){
       app.innerHTML='<div class="boot"><b>AI NEWS BY CARNI · ANALYTICS</b><p class="muted">Загружаю данные…</p></div>';
       try{
-        const data=await portalGet('/analytics');
+        const [data,researchStatus]=await Promise.all([
+          portalGet('/analytics'),
+          portalGet('/analytics/deep-research-status').catch(()=>null)
+        ]);
+        analyticsResearchStatus=researchStatus;
         renderAnalytics(data,24);
       }catch(e){
         if(String(e.message||e).includes('не привязан')||String(e.message||e).includes('истёк')){location.href=location.pathname;return}
