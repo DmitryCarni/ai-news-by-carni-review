@@ -905,7 +905,7 @@
         btn.textContent='Собираю пакет…';
         try{
           const stamp=new Date().toISOString().slice(0,10);
-          const result=await portalDownload('/analytics/deep-research-pack?mode=weekly','ai-news-deep-research-weekly-'+stamp+'.zip');
+          const result=await portalDownload('/analytics/deep-research-pack?mode=weekly','ai-news-deep-research-weekly-'+stamp+'.json');
           btn.textContent='Пакет скачан';
           if(result.sha256)btn.title='SHA-256: '+result.sha256;
           analyticsResearchStatus=await portalGet('/analytics/deep-research-status').catch(()=>analyticsResearchStatus);
@@ -969,12 +969,12 @@
     async function loadAnalytics(){
       app.innerHTML='<div class="boot"><b>AI NEWS BY CARNI · ANALYTICS</b><p class="muted">Загружаю данные…</p></div>';
       try{
-        const [data,researchStatus]=await Promise.all([
-          portalGet('/analytics'),
-          portalGet('/analytics/deep-research-status').catch(()=>null)
-        ]);
-        analyticsResearchStatus=researchStatus;
+        const data=await portalGet('/analytics');
         renderAnalytics(data,24);
+        portalGet('/analytics/deep-research-status').then(researchStatus=>{
+          analyticsResearchStatus=researchStatus;
+          renderAnalytics(data,24);
+        }).catch(()=>{});
       }catch(e){
         if(String(e.message||e).includes('не привязан')||String(e.message||e).includes('истёк')){location.href=location.pathname;return}
         app.innerHTML='<div class="boot"><b>AI NEWS BY CARNI · ANALYTICS</b><p class="bad">'+esc(e.message||String(e))+'</p><p><button class="btn" id="analyticsBack">На главную</button></p></div>';
