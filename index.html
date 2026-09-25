@@ -250,6 +250,7 @@
     let analyticsSort={key:'publishedAt',dir:'desc'};
     let analyticsRetentionVideoId='';
     let analyticsAudienceVideoId='';
+    let analyticsTelemetryVideoId='';
     const retentionNearest=(curve,target)=>{
       let best=null,bestDistance=Infinity;
       for(const point of curve||[]){
@@ -394,6 +395,114 @@
         '</div>';
     };
 
+    const telemetryNum=value=>{
+      if(value===null||value===undefined||value==='')return null;
+      const n=Number(value);
+      return Number.isFinite(n)?n:null;
+    };
+    const telemetryText=value=>value===null||value===undefined||value===''?'—':String(value);
+    const telemetrySeconds=value=>{
+      const n=telemetryNum(value);
+      return n===null?'—':n.toLocaleString('ru-RU',{maximumFractionDigits:1})+' с';
+    };
+    const telemetryMinutes=value=>{
+      const n=telemetryNum(value);
+      if(n===null)return'—';
+      if(n<60)return n.toLocaleString('ru-RU',{maximumFractionDigits:1})+' мин';
+      return (n/60).toLocaleString('ru-RU',{maximumFractionDigits:1})+' ч';
+    };
+    const telemetryBytes=value=>{
+      const n=telemetryNum(value);
+      if(n===null)return'—';
+      return (n/1048576).toLocaleString('ru-RU',{maximumFractionDigits:1})+' МБ';
+    };
+    const telemetryGroupHtml=(title,rows)=>{
+      const body=(rows||[]).map(row=>'<div class="audienceRow"><div class="audienceRowLabel" title="'+esc(row[0])+'">'+esc(row[0])+'</div><div class="audienceRowValue">'+esc(row[1])+'</div></div>').join('');
+      return '<div class="audienceGroup"><div class="audienceGroupTitle">'+esc(title)+'</div><div class="audienceRows">'+(body||'<div class="audienceEmpty">Нет данных</div>')+'</div></div>';
+    };
+    const productionTelemetryPanelHtml=video=>{
+      if(!video)return '<div class="muted">Нет опубликованных Shorts.</div>';
+      const cr=video.creative||{};
+      const prod=video.production||{};
+      const t=prod.telemetry||{};
+      const process=t.creative_process||{};
+      const thumb=t.thumbnail||{};
+      const motion=t.motion||{};
+      const qc=t.render_qc||{};
+      const sem=cr.semanticFeatures||{};
+      const motionId=prod.motionProfileId||motion.profile_id||'исторически не записан';
+      const musicId=prod.musicId||(t.music||{}).id||'—';
+      const renderer=cr.rendererCommit?String(cr.rendererCommit).slice(0,10):'—';
+      const hookFlags=[
+        cr.hookHasNumber?'число':null,
+        cr.hookStartsWithNumber?'начинается с числа':null,
+        cr.hookHasQuestion?'вопрос':null
+      ].filter(Boolean).join(', ')||'без спец. маркеров';
+      const topics=Array.isArray(sem.topic_families)?sem.topic_families.join(', '):'—';
+      const stakes=Array.isArray(sem.stakes)?sem.stakes.join(', '):'—';
+      const thumbSize=thumb.width&&thumb.height?String(thumb.width)+'×'+String(thumb.height)+(thumb.aspect_ratio?' · '+thumb.aspect_ratio:''):'—';
+      const qcCodec=[qc.videoCodec,qc.audioCodec].filter(Boolean).join(' / ')||'—';
+      const lufs=telemetryNum(qc.integratedLufs);
+      const ssim=telemetryNum(qc.outroSsim);
+      return '<div class="studioMetricHint">Это фактический паспорт производства конкретного опубликованного ролика. Исторически не записанные поля остаются пустыми; они не восстанавливаются догадками.</div>'+
+        '<div class="audienceGrid">'+
+          telemetryGroupHtml('Конструкция',[
+            ['Длительность',telemetrySeconds(video.durationSeconds)],
+            ['Кадров / beats',telemetryText(cr.beatCount)],
+            ['Средний beat',telemetrySeconds(cr.averageBeatDurationSeconds)],
+            ['Первый beat',telemetrySeconds(cr.firstBeatDurationSeconds)],
+            ['Текст',telemetryText(cr.totalTextChars)+' симв. · '+telemetryText(cr.totalLineCount)+' строк'],
+            ['Плотность текста',telemetryNum(cr.textCharsPerSecond)===null?'—':Number(cr.textCharsPerSecond).toLocaleString('ru-RU',{maximumFractionDigits:1})+' симв/с'],
+            ['Акценты',telemetryText(cr.accentSpanCount)],
+            ['Hook',hookFlags]
+          ])+
+          telemetryGroupHtml('Motion / музыка',[
+            ['Motion profile',motionId],
+            ['Recipe',telemetryText(motion.recipe_id)+(motion.recipe_version?' v'+motion.recipe_version:'')],
+            ['Renderer commit',renderer],
+            ['Музыка',musicId],
+            ['Источник музыки',telemetryText(prod.musicSource||(t.music||{}).source)]
+          ])+
+          telemetryGroupHtml('Превью',[
+            ['Генераций',telemetryText(thumb.generation_count)],
+            ['Утверждённая revision',telemetryText(thumb.generation_revision)],
+            ['Источник',telemetryText(thumb.provider||thumb.source)],
+            ['Модель',telemetryText(thumb.model)],
+            ['Размер',thumbSize],
+            ['Текстовый overlay',thumb.overlay_enabled===true?'да':'нет']
+          ])+
+          telemetryGroupHtml('Производство',[
+            ['Версий текста',telemetryText(process.text_review_versions)],
+            ['Редакционных правок',telemetryText(process.editorial_revision_count)],
+            ['Storyboard revisions',telemetryText(process.storyboard_revision_count)],
+            ['Попыток рендера',telemetryText(process.render_attempt_count)],
+            ['Рендер',telemetrySeconds(process.render_seconds)],
+            ['Видео на ревью',telemetrySeconds(process.video_review_seconds)],
+            ['От первого review до PUBLIC',telemetryMinutes(process.first_review_to_public_minutes)],
+            ['Канал решения MP4',telemetryText(process.video_decision_channel)]
+          ])+
+          telemetryGroupHtml('Render QC',[
+            ['Файл',telemetryBytes(qc.bytes)],
+            ['Фактическая длительность',telemetrySeconds(qc.durationSeconds)],
+            ['Разрешение',qc.width&&qc.height?telemetryText(qc.width)+'×'+telemetryText(qc.height):'—'],
+            ['FPS',telemetryText(qc.fps)],
+            ['Кодеки',qcCodec],
+            ['Integrated loudness',lufs===null?'—':lufs.toLocaleString('ru-RU',{maximumFractionDigits:1})+' LUFS'],
+            ['Outro SSIM',ssim===null?'—':ssim.toLocaleString('ru-RU',{maximumFractionDigits:3})]
+          ])+
+          telemetryGroupHtml('AI-разметка содержания',[
+            ['Темы',topics],
+            ['Ставки / stakes',stakes],
+            ['Новизна',telemetryText(sem.novelty)],
+            ['Срочность',telemetryText(sem.immediacy)],
+            ['Прямота hook',telemetryText(sem.hook_directness)],
+            ['Человеческая значимость',telemetryText(sem.human_relevance)],
+            ['Широта аудитории',telemetryText(sem.audience_breadth)],
+            ['Масштаб последствий',telemetryText(sem.consequence_magnitude)]
+          ])+
+        '</div>';
+    };
+
     const coverageAgeHours=video=>{
       const published=Date.parse(String(video?.publishedAt||''));
       if(Number.isFinite(published))return Math.max(0,(Date.now()-published)/3600000);
@@ -474,6 +583,10 @@
       if(!retentionVideos.some(v=>v.videoId===analyticsRetentionVideoId))analyticsRetentionVideoId=retentionVideos[0]?.videoId||'';
       const retentionVideo=retentionVideos.find(v=>v.videoId===analyticsRetentionVideoId)||retentionVideos[0]||null;
       const retentionOptions=retentionVideos.map(v=>'<option value="'+esc(v.videoId)+'" '+(v.videoId===retentionVideo?.videoId?'selected':'')+'>'+esc(v.title||v.shortId||v.videoId)+'</option>').join('');
+      const telemetryVideos=sortedVideos.filter(v=>v.creative||v.production);
+      if(!telemetryVideos.some(v=>v.videoId===analyticsTelemetryVideoId))analyticsTelemetryVideoId=telemetryVideos[0]?.videoId||'';
+      const telemetryVideo=telemetryVideos.find(v=>v.videoId===analyticsTelemetryVideoId)||telemetryVideos[0]||null;
+      const telemetryOptions=telemetryVideos.map(v=>'<option value="'+esc(v.videoId)+'" '+(v.videoId===telemetryVideo?.videoId?'selected':'')+'>'+esc(v.title||v.shortId||v.videoId)+'</option>').join('');
       const audienceVideos=sortedVideos.filter(v=>v.audience&&Object.values(v.audience).some(rows=>Array.isArray(rows)&&rows.length>0));
       if(!audienceVideos.some(v=>v.videoId===analyticsAudienceVideoId))analyticsAudienceVideoId=audienceVideos[0]?.videoId||'';
       const audienceVideo=audienceVideos.find(v=>v.videoId===analyticsAudienceVideoId)||audienceVideos[0]||null;
@@ -523,6 +636,7 @@
         ['Reporting bulk',Number(coverage.reporting||0)+' / '+coverageTotal]
       ].map(x=>'<div class="coverageCell"><div class="coverageValue">'+esc(x[1])+'</div><div class="coverageLabel">'+esc(x[0])+'</div></div>').join('')+'</div></section>'+
       '<section class="card"><b>Полнота по каждому Short</b>'+coverageMatrixHtml(data.videos||[])+'</section>'+
+      '<section class="card"><b>Паспорт ролика · производство и креатив</b><div class="retentionToolbar">'+(telemetryVideos.length?'<select class="retentionSelect" id="telemetryVideoSelect">'+telemetryOptions+'</select>':'<span class="muted">Нет данных.</span>')+'</div>'+productionTelemetryPanelHtml(telemetryVideo)+'</section>'+
       '<section class="card"><b>Аудитория</b><div class="retentionToolbar">'+(audienceVideos.length?'<select class="retentionSelect" id="audienceVideoSelect">'+audienceOptions+'</select>':'<span class="muted">YouTube ещё не отдал обработанные данные аудитории.</span>')+'</div>'+audiencePanelHtml(audienceVideo)+'</section>'+
       '<section class="card"><b>Кривая удержания</b><div class="retentionToolbar">'+(retentionVideos.length?'<select class="retentionSelect" id="retentionVideoSelect">'+retentionOptions+'</select>':'<span class="muted">YouTube ещё не отдал ни одной кривой.</span>')+'</div>'+(retentionVideo?retentionChartHtml(retentionVideo):'')+'</section>'+
       '<section class="card"><b>Сравнение кривых удержания</b><div class="studioMetricHint">Описательное сравнение без автоматических корреляций и «победителей»: текущая выборка слишком мала для устойчивых выводов о факторах разгона.</div>'+retentionCompareHtml(retentionVideos)+'</section>'+
@@ -585,6 +699,11 @@
           alert('Не удалось выгрузить research dataset: '+String(e.message||e));
           setTimeout(()=>{btn.textContent=before;btn.disabled=false},1200);
         }
+      };
+      const telemetrySelect=document.getElementById('telemetryVideoSelect');
+      if(telemetrySelect)telemetrySelect.onchange=()=>{
+        analyticsTelemetryVideoId=String(telemetrySelect.value||'');
+        renderAnalytics(data,selectedAge);
       };
       const audienceSelect=document.getElementById('audienceVideoSelect');
       if(audienceSelect)audienceSelect.onchange=()=>{
