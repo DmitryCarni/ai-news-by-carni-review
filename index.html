@@ -98,6 +98,20 @@
     .portal.analytics .studioMetricGrid{gap:6px;margin-top:6px}
     .portal.analytics .studioMetricRow{gap:6px;padding:7px}
     .portal.analytics .analyticsRaw.collapsed{padding-bottom:9px}
+    .portal.analytics .analyticsKpis{grid-template-columns:repeat(8,minmax(0,1fr))}
+    .portal.analytics .analyticsStatusGrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .portal.analytics .analyticsStatusGrid .coverageGrid{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:6px}
+    .portal.analytics .analyticsStatusGrid .coverageCell{padding:7px 9px}
+    .portal.analytics .analyticsStatusGrid .studioMetricHint{margin-top:3px;line-height:1.3}
+    @media(max-width:1250px){
+      .portal.analytics .analyticsKpis{grid-template-columns:repeat(4,minmax(0,1fr))}
+      .portal.analytics .analyticsStatusGrid{grid-template-columns:1fr}
+      .portal.analytics .analyticsStatusGrid .coverageGrid{grid-template-columns:repeat(6,minmax(0,1fr))}
+    }
+    @media(max-width:850px){
+      .portal.analytics .analyticsKpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .portal.analytics .analyticsStatusGrid .coverageGrid{grid-template-columns:repeat(3,minmax(0,1fr))}
+    }
   </style>
 </head>
 <body>
@@ -1072,7 +1086,7 @@
         ['Retention curve',ret+' / '+count],
         ['Снимок',aDate(data.source?.latestSnapshotAt)]
       ].map(x=>'<div class="kpi"><div class="kpiValue">'+esc(x[1])+'</div><div class="kpiLabel">'+esc(x[0])+'</div></div>').join('')+'</div>'+
-      '<section class="card"><b>Покрытие данных</b><div class="studioMetricHint">Не оценка качества роликов, а сколько источников уже реально заполнено. Пустое не считается нулём.</div><div class="coverageGrid">'+[
+      '<div class="analyticsStatusGrid"><section class="card"><b>Покрытие данных</b><div class="studioMetricHint">Сколько источников уже реально заполнено; пустое не считается нулём.</div><div class="coverageGrid">'+[
         ['Семантика',Number(coverage.semantic||0)+' / '+coverageTotal],
         ['Распределение',Number(coverage.distribution||0)+' / '+coverageTotal],
         ['Studio Stayed',Number(coverage.studioStayed||0)+' / '+coverageTotal],
@@ -1080,14 +1094,14 @@
         ['Демография',Number(coverage.demographics||0)+' / '+coverageTotal],
         ['Reporting bulk',Number(coverage.reporting||0)+' / '+coverageTotal]
       ].map(x=>'<div class="coverageCell"><div class="coverageValue">'+esc(x[1])+'</div><div class="coverageLabel">'+esc(x[0])+'</div></div>').join('')+'</div></section>'+
-      '<section class="card"><b>Deep Research · недельный цикл</b><div class="studioMetricHint">После пятничного Studio ZIP скачай один пакет и отдай его Deep Research целиком. Внутри уже лежат контракт исследования, накопительная Research State, предыдущий принятый отчёт (если есть) и полный датасет.</div><div class="coverageGrid">'+[
+      '<section class="card"><b>Deep Research · недельный цикл</b><div class="studioMetricHint">Пятничный пакет уже содержит контракт, Research State, предыдущий отчёт и полный датасет.</div><div class="coverageGrid">'+[
         ['Research State','rev '+Number(analyticsResearchStatus?.researchState?.revision||1)],
         ['Зрелые + retention',Number(analyticsResearchStatus?.current?.mature_short_count||0)+' / '+Number(analyticsResearchStatus?.current?.public_short_count||count)],
         ['Последний Studio ZIP',aDate(analyticsResearchStatus?.current?.studio_latest_imported_at)],
         ['Последний пакет',aDate(analyticsResearchStatus?.latestPack?.generated_at)],
         ['Последний отчёт',aDate(analyticsResearchStatus?.latestReport?.accepted_at)],
         ['Контракт',String(analyticsResearchStatus?.contractVersion||'—')]
-      ].map(x=>'<div class="coverageCell"><div class="coverageValue">'+esc(x[1])+'</div><div class="coverageLabel">'+esc(x[0])+'</div></div>').join('')+'</div></section>'+
+      ].map(x=>'<div class="coverageCell"><div class="coverageValue">'+esc(x[1])+'</div><div class="coverageLabel">'+esc(x[0])+'</div></div>').join('')+'</div></section></div>'+
       '<section class="card"><b>Полнота по каждому Short</b>'+coverageMatrixHtml(data.videos||[])+'</section>'+
       '<section class="card"><b>Паспорт ролика · производство и креатив</b><div class="retentionToolbar">'+(telemetryVideos.length?'<select class="retentionSelect" id="telemetryVideoSelect">'+telemetryOptions+'</select>':'<span class="muted">Нет данных.</span>')+'</div>'+productionTelemetryPanelHtml(telemetryVideo)+'</section>'+
       '<section class="card"><b>Аудитория</b><div class="retentionToolbar">'+(audienceVideos.length?'<select class="retentionSelect" id="audienceVideoSelect">'+audienceOptions+'</select>':'<span class="muted">YouTube ещё не отдал обработанные данные аудитории.</span>')+'</div>'+audiencePanelHtml(audienceVideo)+'</section>'+
