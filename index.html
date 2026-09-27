@@ -176,7 +176,7 @@
     };
     const queueRejectHtml=q=>{
       const sha=String(q.candidateSha256||'').toLowerCase();
-      if(q.stage!=='pending_text'||!q.textReviewId||!q.canRejectText&&q.canRejectText!==undefined||!/^[0-9a-f]{64}$/.test(sha))return'';
+      if(q.stage!=='pending_text'||!q.textReviewId||!/^[0-9a-f]{64}$/.test(sha))return'';
       return '<button class="btn reject" data-reject-news="'+Number(q.textReviewId)+'" data-reject-sha="'+esc(sha)+'" data-reject-title="'+esc(q.title||q.shortId||'Short')+'">Отклонить новость</button>';
     };
     const queueActionHtml=q=>queueRejectHtml(q)+'<button class="btn '+(q.needsHuman?'primary':'')+'" data-open-href="'+esc(shortPrimaryHref(q))+'">Открыть Short</button>';
