@@ -174,7 +174,12 @@
       const current=shortCurrentKey(q);
       return shortHref(q,current||'youtube')||shortHref(q,'video')||shortHref(q,'storyboard')||shortHref(q,'text')||('?short='+encodeURIComponent(q.shortId||''));
     };
-    const queueActionHtml=q=>'<button class="btn '+(q.needsHuman?'primary':'')+'" data-open-href="'+esc(shortPrimaryHref(q))+'">Открыть Short</button>';
+    const queueRejectHtml=q=>{
+      const sha=String(q.candidateSha256||'').toLowerCase();
+      if(q.stage!=='pending_text'||!q.textReviewId||!q.canRejectText&&q.canRejectText!==undefined||!/^[0-9a-f]{64}$/.test(sha))return'';
+      return '<button class="btn reject" data-reject-news="'+Number(q.textReviewId)+'" data-reject-sha="'+esc(sha)+'" data-reject-title="'+esc(q.title||q.shortId||'Short')+'">Отклонить новость</button>';
+    };
+    const queueActionHtml=q=>queueRejectHtml(q)+'<button class="btn '+(q.needsHuman?'primary':'')+'" data-open-href="'+esc(shortPrimaryHref(q))+'">Открыть Short</button>';
     const slotBadge=q=>q.publicationSlot?'<span class="slotBadge '+(q.publicationSlot==='evening'?'evening':'')+'">'+(q.publicationSlot==='evening'?'Вечер':'День')+'</span>':'';
     const queueCard=q=>'<div class="queueItem '+(q.needsHuman?'human':'')+'"><div><div class="queueTitle">'+esc(q.title||q.shortId||'Short')+slotBadge(q)+' <span class="queueStage">'+esc(q.stageLabel||q.stage||'—')+'</span></div><div class="queueMeta">'+esc(q.reportDate||'')+(q.videoReviewId?' · VID-'+String(q.videoReviewId).padStart(4,'0'):(q.textReviewId?' · TXT-'+String(q.textReviewId).padStart(4,'0'):''))+'</div></div><div class="queueAction">'+queueActionHtml(q)+'</div></div>';
 
@@ -1614,6 +1619,30 @@
       )+'</div>';
       document.getElementById('disconnect').onclick=()=>{if(confirm('Точно отвязать этот браузер от Reviewer? Для повторного доступа потребуется новая привязка.')){localStorage.removeItem(portalKey);localStorage.removeItem(pairingIdKey);localStorage.removeItem(pairingCodeKey);location.href=location.pathname}};
       document.getElementById('openAnalytics').onclick=()=>location.href=analyticsHref;
+      document.querySelectorAll('[data-reject-news]').forEach(n=>n.onclick=async()=>{
+        const reviewId=Number(n.dataset.rejectNews||0);
+        const candidateSha256=String(n.dataset.rejectSha||'').toLowerCase();
+        const title=String(n.dataset.rejectTitle||'Short');
+        if(!Number.isSafeInteger(reviewId)||reviewId<=0||!/^[0-9a-f]{64}$/.test(candidateSha256)){
+          alert('Не удалось определить exact-версию новости. Обнови страницу и попробуй ещё раз.');
+          return;
+        }
+        if(!confirm('Точно отклонить эту новость?\n\n«'+title+'»\n\nОна будет снята с текущей очереди, и производство Short по этой версии не запустится.'))return;
+        const row=n.closest('.queueItem');
+        const buttons=row?row.querySelectorAll('button'):[n];
+        buttons.forEach(b=>{b.disabled=true});
+        const before=n.textContent;
+        n.textContent='Отклоняю…';
+        try{
+          await portalPost('/editorial/decision',{reviewId,decision:'reject',candidateSha256});
+          n.textContent='Отклонено';
+          setTimeout(()=>loadHome(),250);
+        }catch(e){
+          n.textContent=before;
+          buttons.forEach(b=>{b.disabled=false});
+          alert('Не удалось отклонить новость: '+String(e.message||e));
+        }
+      });
       document.querySelectorAll('[data-open-href]').forEach(n=>n.onclick=()=>{location.href=String(n.dataset.openHref||location.pathname)});
       document.querySelectorAll('[data-open-session]').forEach(n=>n.onclick=()=>{location.href='?session='+encodeURIComponent(n.dataset.openSession)+'&portal=1'});
       document.querySelectorAll('[data-open-editorial]').forEach(n=>n.onclick=()=>{location.href='?editorial='+encodeURIComponent(n.dataset.openEditorial)});
