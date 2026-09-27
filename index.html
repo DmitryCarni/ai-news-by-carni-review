@@ -158,7 +158,7 @@
     };
     const shortFlowHtml=(q,activeKey='')=>{
       const current=shortCurrentKey(q);
-      const defs=[['text','Текст'],['storyboard','Макет'],['thumbnail','P'],['video','Видео'],['youtube','YouTube']];
+      const defs=[['text','Текст'],['storyboard','Макет'],['thumbnail','Превью'],['video','Видео'],['youtube','YouTube']];
       return '<div class="shortFlowBar">'+defs.map(([key,label])=>{
         const href=shortHref(q,key),done=shortDone(q,key),active=activeKey===key,state=done?'done':current===key?'current':'wait';
         const dot=done?'✓':current===key?'●':'○';
@@ -170,16 +170,17 @@
       const data=await portalGet('/home');
       return (data.queue||[]).find(x=>(shortId&&String(x.shortId)===String(shortId))||(sessionId&&String(x.sessionId)===String(sessionId)))||null;
     }
-    const shortPrimaryHref=q=>{
-      const current=shortCurrentKey(q);
-      return shortHref(q,current||'youtube')||shortHref(q,'video')||shortHref(q,'storyboard')||shortHref(q,'text')||('?short='+encodeURIComponent(q.shortId||''));
-    };
+    const shortPrimaryHref=q=>'?short='+encodeURIComponent(q.shortId||'');
     const queueRejectHtml=q=>{
       const sha=String(q.candidateSha256||'').toLowerCase();
       if(q.stage!=='pending_text'||!q.textReviewId||!/^[0-9a-f]{64}$/.test(sha))return'';
       return '<button class="btn reject" data-reject-news="'+Number(q.textReviewId)+'" data-reject-sha="'+esc(sha)+'" data-reject-title="'+esc(q.title||q.shortId||'Short')+'">Отклонить новость</button>';
     };
-    const queueActionHtml=q=>queueRejectHtml(q)+'<button class="btn '+(q.needsHuman?'primary':'')+'" data-open-href="'+esc(shortPrimaryHref(q))+'">Открыть Short</button>';
+    const queueVideoHtml=q=>{
+      if(q.stage!=='pending_video'||!q.videoReviewId)return'';
+      return '<button class="btn" data-preview-video="'+Number(q.videoReviewId)+'" data-return-short="'+esc(q.shortId||'')+'">Просмотреть видео</button><button class="btn green" data-approve-video="'+Number(q.videoReviewId)+'" data-return-short="'+esc(q.shortId||'')+'">Одобрить видео</button>';
+    };
+    const queueActionHtml=q=>queueRejectHtml(q)+queueVideoHtml(q)+'<button class="btn '+(q.needsHuman?'primary':'')+'" data-open-href="'+esc(shortPrimaryHref(q))+'">Открыть Short</button>';
     const slotBadge=q=>q.publicationSlot?'<span class="slotBadge '+(q.publicationSlot==='evening'?'evening':'')+'">'+(q.publicationSlot==='evening'?'Вечер':'День')+'</span>':'';
     const queueCard=q=>'<div class="queueItem '+(q.needsHuman?'human':'')+'"><div><div class="queueTitle">'+esc(q.title||q.shortId||'Short')+slotBadge(q)+' <span class="queueStage">'+esc(q.stageLabel||q.stage||'—')+'</span></div><div class="queueMeta">'+esc(q.reportDate||'')+(q.videoReviewId?' · VID-'+String(q.videoReviewId).padStart(4,'0'):(q.textReviewId?' · TXT-'+String(q.textReviewId).padStart(4,'0'):''))+'</div></div><div class="queueAction">'+queueActionHtml(q)+'</div></div>';
 
@@ -1468,6 +1469,11 @@
       const storyboardHash=String(r.storyboard?.storyboardHash||'');
       const renderer=String(r.storyboard?.rendererCommit||'');
       const storyboardSessionId=String(r.storyboard?.sessionId||'');
+      const thumbnailPresent=!!r.thumbnail?.present;
+      const thumbnailApproved=!!r.thumbnail?.approved;
+      const thumbnailSha=String(r.thumbnail?.approvedSha256||'');
+      const musicId=String(r.productionTelemetry?.music?.id||'');
+      const musicLabel=musicId==='music.dark-electronic-pulse.v1'?'Dark Electronic Pulse · Databend':musicId==='music.ether-oar.v1'?'Ether Oar · The Whole Other':(musicId||'не зафиксирована');
       const timingBeats=Array.isArray(r.storyboard?.beats)?r.storyboard.beats:[];
       const timingFmt=v=>Number(v).toFixed(2).replace(/0$/,'').replace('.',',')+'с';
       const timingSummary=timingBeats.length
@@ -1476,21 +1482,29 @@
       const staleNotice=Number(r.resolvedFromStaleReviewId||0)>0
         ?'<div class="workspaceNeed current"><b>Обновлено:</b> старая ссылка VID-'+String(r.resolvedFromStaleReviewId).padStart(4,'0')+' автоматически заменена на актуальный '+esc(vidLabel)+'.</div>'
         :'';
-      app.innerHTML='<div class="videoReview"><div class="editorialHead"><div><div class="brand">AI NEWS BY CARNI · REVIEW</div><div class="sub">Exact MP4 · финальное согласование</div></div><a class="btn" href="'+returnHref+'">← К очереди</a></div>'+flowHtml+staleNotice+
+      const visualNotice=r.visualPath?.fastPath
+        ?'<div class="workspaceNeed wait"><b>Ускоренный путь:</b> отдельные макет и превью для этого Short не создавались. Видео было собрано напрямую после одобрения текста.</div>'
+        :'';
+      app.innerHTML='<div class="videoReview"><div class="editorialHead"><div><div class="brand">AI NEWS BY CARNI · REVIEW</div><div class="sub">Exact MP4 · финальное согласование</div></div><a class="btn" href="'+returnHref+'">← К очереди</a></div>'+flowHtml+staleNotice+visualNotice+
         '<div class="card"><div class="videoBox"><div><video class="videoPlayer" controls playsinline preload="metadata" src="'+esc(r.videoUrl||'')+'"></video><div class="videoNote">Защищённая ссылка живёт '+Math.round(Number(r.videoUrlExpiresInSeconds||0)/60)+' мин. Решение привязывается не к ссылке, а к exact SHA-256 файла.</div></div>'+
         '<div class="videoIdentity"><div><div class="videoMetaTitle">'+esc(r.title||r.shortId||'Short')+'</div><div class="editorialMeta">'+esc(r.reportDate||'')+' · '+esc(vidLabel)+' · '+(Number(r.videoBytes||0)/1048576).toFixed(1)+' МБ</div></div>'+
         '<div class="identityRow"><div class="identityLabel">Exact MP4 SHA-256</div><div class="identityValue">'+esc(r.videoSha256||'')+'</div></div>'+
         (r.publishBundle?.present?'<div class="identityRow"><div class="identityLabel">Publish bundle SHA-256</div><div class="identityValue">'+esc(bundleSha)+'</div></div>':'<div class="identityRow"><div class="identityLabel">Publish bundle</div><div class="identityValue bad">Отсутствует — публикация после approval будет заблокирована</div></div>')+
-        (r.storyboard?.revisionId?'<div class="identityRow"><div class="identityLabel">Storyboard</div><div class="identityValue">revision '+esc(r.storyboard.revisionId)+' · '+esc(storyboardHash)+'<br>renderer '+esc(renderer)+'</div></div>':'')+
+        '<div class="identityRow"><div class="identityLabel">Макет</div><div class="identityValue">'+(storyboardSessionId?(r.storyboard?.revisionId?'Есть · revision '+esc(r.storyboard.revisionId):'Есть'):'Не создавался · ускоренный путь')+'</div></div>'+
+        '<div class="identityRow"><div class="identityLabel">Превью</div><div class="identityValue">'+(thumbnailPresent?(thumbnailApproved?'Exact PNG утвержден'+(thumbnailSha?' · '+esc(thumbnailSha.slice(0,12))+'…':''):'Создано · '+esc(r.thumbnail?.generationStatus||'ждёт решения')):'Не создавалось · ускоренный путь')+'</div></div>'+
+        '<div class="identityRow"><div class="identityLabel">Музыка</div><div class="identityValue">'+esc(musicLabel)+(musicId?'<br><span class="quiet">'+esc(musicId)+'</span>':'')+'</div></div>'+
+        (r.storyboard?.revisionId?'<div class="identityRow"><div class="identityLabel">Storyboard identity</div><div class="identityValue">'+esc(storyboardHash)+'<br>renderer '+esc(renderer)+'</div></div>':'')+
         (timingSummary?'<div class="identityRow"><div class="identityLabel">Тайминги кадров</div><div class="identityValue">'+esc(timingSummary)+'</div></div>':'')+
         '<div class="identityRow"><div class="identityLabel">Просмотр</div><div>Web остаётся точкой решения; exact MP4 также отправляется в Telegram для быстрого просмотра.</div></div>'+
         '<div class="identityRow"><div class="identityLabel">YouTube после approval</div><div>'+esc(r.youtube?.releaseMode||'—')+' · initial '+esc(r.youtube?.privacyStatus||'private')+'</div></div></div></div>'+
-        (storyboardSessionId?'<div class="videoActions"><button class="btn" id="openStoryboardFromVideo">← Макет и тайминги</button></div>':'')+
+        (storyboardSessionId?'<div class="videoActions"><button class="btn" id="openStoryboardFromVideo">Макет и тайминги</button><button class="btn" id="openThumbnailFromVideo">Превью</button></div>':'')+
         (r.canDecide?'<div class="videoActions"><button class="btn reject" id="rejectVideo">✏️ Нужны правки</button><button class="btn green" id="approveVideo">✅ Одобрить видео</button></div>':'<div class="decisionState">Это exact MP4 уже обработан: '+esc(r.status||'—')+'.</div>')+
         '<div class="decisionState" id="videoDecisionState"></div></div></div>';
 
       const storyboardBtn=document.getElementById('openStoryboardFromVideo');
       if(storyboardBtn)storyboardBtn.onclick=()=>{location.href='?session='+encodeURIComponent(storyboardSessionId)+'&portal=1'+sessionReturnSuffix};
+      const thumbnailBtn=document.getElementById('openThumbnailFromVideo');
+      if(thumbnailBtn)thumbnailBtn.onclick=()=>{location.href='?session='+encodeURIComponent(storyboardSessionId)+'&portal=1'+sessionReturnSuffix+'&mode=thumbnail'};
       if(!r.canDecide)return;
       const act=async(decision)=>{
         const approve=decision==='approve';
@@ -1523,8 +1537,9 @@
     }
 
     const workspaceTextStatus=q=>({pending:'Ждёт решения',approved:'Одобрен',rejected:'Отклонён',superseded:'Заменён'})[String(q.textStatus||'')]||String(q.textStatus||'Нет данных');
-    const workspaceStoryboardStatus=q=>!q.sessionId?'Ещё не создан':q.sessionStatus==='editing'?'Редактируется':q.sessionStatus==='approved'?'Одобрен':String(q.sessionStatus||'Готов');
-    const workspaceThumbStatus=q=>q.thumbnail?.approved?'Утверждено':q.thumbnail?.generationStatus==='ready'?'Готово к решению':q.thumbnail?.generationStatus==='processing'?'Генерируется':q.thumbnail?.generationStatus||'Ещё не готово';
+    const workspaceFastVisualPath=q=>!!q.videoReviewId&&!q.sessionId;
+    const workspaceStoryboardStatus=q=>workspaceFastVisualPath(q)?'Не создавался':!q.sessionId?'Ещё не создан':q.sessionStatus==='editing'?'Редактируется':q.sessionStatus==='approved'?'Одобрен':String(q.sessionStatus||'Готов');
+    const workspaceThumbStatus=q=>workspaceFastVisualPath(q)&&!q.thumbnail?.generationStatus&&!q.thumbnail?.approved?'Не создавалось':q.thumbnail?.approved?'Утверждено':q.thumbnail?.generationStatus==='ready'?'Готово к решению':q.thumbnail?.generationStatus==='processing'?'Генерируется':q.thumbnail?.generationStatus||'Ещё не готово';
     const workspaceVideoStatus=q=>!q.videoReviewId?'Ещё не готово':q.videoStatus==='pending'?'Ждёт решения':q.videoStatus==='approved'?'Одобрено':q.videoStatus==='rejected'?'Нужны правки':String(q.videoStatus||'—');
     const workspaceYoutubeStatus=q=>{
       const state=String(q.publication?.state||''),privacy=String(q.publication?.privacyStatus||'');
@@ -1550,8 +1565,8 @@
       const cls=k=>k===currentKey?'current':(k==='text'&&textDone)||(k==='storyboard'&&storyboardDone)||(k==='thumbnail'&&thumbDone)||(k==='video'&&videoDone)||(k==='youtube'&&youtubeDone)?'done':'wait';
 
       const textActions=q.textReviewId?'<button class="btn" data-open-editorial="'+Number(q.textReviewId)+'" data-return-short="'+esc(q.shortId||'')+'">Открыть текст</button>':'<button class="btn" disabled>Ещё нет</button>';
-      const storyboardActions=q.sessionId?'<button class="btn" data-open-session-url="'+esc(workspaceSessionHref(q))+'">Открыть макет</button>':'<button class="btn" disabled>Ещё нет</button>';
-      const thumbActions=q.sessionId?'<button class="btn" data-open-session-url="'+esc(workspaceSessionHref(q,'thumbnail'))+'">Открыть P</button>':'<button class="btn" disabled>Ещё нет</button>';
+      const storyboardActions=q.sessionId?'<button class="btn" data-open-session-url="'+esc(workspaceSessionHref(q))+'">Открыть макет</button>':'<button class="btn" disabled>'+(workspaceFastVisualPath(q)?'Не создавался':'Ещё нет')+'</button>';
+      const thumbActions=q.sessionId?'<button class="btn" data-open-session-url="'+esc(workspaceSessionHref(q,'thumbnail'))+'">Открыть превью</button>':'<button class="btn" disabled>'+(workspaceFastVisualPath(q)?'Не создавалось':'Ещё нет')+'</button>';
       const videoActions=q.videoReviewId?'<button class="btn" data-open-video="'+Number(q.videoReviewId)+'" data-return-short="'+esc(q.shortId||'')+'">Открыть exact MP4</button>':'<button class="btn" disabled>Ещё нет</button>';
       const youtubeActions=q.sessionId?'<button class="btn" data-open-session-url="'+esc(workspaceSessionHref(q,'youtube'))+'">Настройки YouTube</button>':'<button class="btn" disabled>Ещё нет</button>';
 
@@ -1560,11 +1575,11 @@
         '<div class="workspaceNeed '+(youtubeDone?'done':q.needsHuman?'current':'wait')+'"><b>'+(youtubeDone?'✓ Short завершён:':'Сейчас:')+'</b> '+esc(youtubeDone?'опубликован и вся цепочка закрыта':q.needsHuman?'нужно твоё решение — '+(q.stageLabel||'открой текущий этап'):(q.stageLabel||'автоматика работает'))+'</div>'+
         '<div class="workspaceGrid">'+
           workspaceStep('1 · Текст',workspaceTextStatus(q),'TXT-'+String(q.textReviewId||0).padStart(4,'0')+' · формулировки, комментарии и редактура',textActions,cls('text'))+
-          workspaceStep('2 · Макет и тайминги',workspaceStoryboardStatus(q),q.sessionId?'Storyboard session готова · revision '+esc(q.latestRevisionId||'—'):'Появится после одобрения текста',storyboardActions,cls('storyboard'))+
-          workspaceStep('3 · Превью P',workspaceThumbStatus(q),q.thumbnail?.approvedSha256?'Exact PNG · '+esc(String(q.thumbnail.approvedSha256).slice(0,12))+'…':'Генерация, текст на превью и утверждение exact PNG',thumbActions,cls('thumbnail'))+
+          workspaceStep('2 · Макет и тайминги',workspaceStoryboardStatus(q),q.sessionId?'Storyboard session готова · revision '+esc(q.latestRevisionId||'—'):workspaceFastVisualPath(q)?'Этот Short прошёл ускоренный путь: отдельный макет не создавался.':'Появится после одобрения текста',storyboardActions,cls('storyboard'))+
+          workspaceStep('3 · Превью',workspaceThumbStatus(q),q.thumbnail?.approvedSha256?'Exact PNG · '+esc(String(q.thumbnail.approvedSha256).slice(0,12))+'…':workspaceFastVisualPath(q)?'Отдельная превью-картинка с текстом не создавалась.':'Генерация картинки, текста на превью и утверждение exact PNG',thumbActions,cls('thumbnail'))+
           workspaceStep('4 · Видео',workspaceVideoStatus(q),q.videoReviewId?'VID-'+String(q.videoReviewId).padStart(4,'0')+' · exact MP4':'Появится после рендера/QC',videoActions,cls('video'))+
           workspaceStep('5 · YouTube и публикация',workspaceYoutubeStatus(q),q.youtubeVideoId?'YouTube · '+esc(q.youtubeVideoId):'Название, описание, режим выпуска и публикация',youtubeActions,cls('youtube'))+
-          '<section class="workspaceStep workspaceWide '+(youtubeDone?'done':'wait')+'"><div class="workspaceStepHead"><div class="workspaceStepTitle">Цепочка Short</div><div class="workspaceStepStatus">'+(youtubeDone?'✓ завершена':'в работе')+'</div></div><div class="workspaceStepMeta">Текст → Макет → P → exact MP4 → YouTube. Эта страница собирает каноническое состояние из Supabase после каждого обновления.</div><div class="workspaceIds">shortId '+esc(q.shortId)+' · TXT '+esc(q.textReviewId||'—')+' · session '+esc(q.sessionId||'—')+' · VID '+esc(q.videoReviewId||'—')+'</div></section>'+
+          '<section class="workspaceStep workspaceWide '+(youtubeDone?'done':'wait')+'"><div class="workspaceStepHead"><div class="workspaceStepTitle">Цепочка Short</div><div class="workspaceStepStatus">'+(youtubeDone?'✓ завершена':'в работе')+'</div></div><div class="workspaceStepMeta">Текст → Макет → Превью → exact MP4 → YouTube. Эта страница собирает каноническое состояние из Supabase после каждого обновления.</div><div class="workspaceIds">shortId '+esc(q.shortId)+' · TXT '+esc(q.textReviewId||'—')+' · session '+esc(q.sessionId||'—')+' · VID '+esc(q.videoReviewId||'—')+'</div></section>'+
         '</div></div>';
 
       document.getElementById('workspaceHome').onclick=()=>location.href=location.pathname;
@@ -1619,6 +1634,35 @@
       )+'</div>';
       document.getElementById('disconnect').onclick=()=>{if(confirm('Точно отвязать этот браузер от Reviewer? Для повторного доступа потребуется новая привязка.')){localStorage.removeItem(portalKey);localStorage.removeItem(pairingIdKey);localStorage.removeItem(pairingCodeKey);location.href=location.pathname}};
       document.getElementById('openAnalytics').onclick=()=>location.href=analyticsHref;
+      document.querySelectorAll('[data-preview-video]').forEach(n=>n.onclick=()=>{
+        const reviewId=Number(n.dataset.previewVideo||0);
+        const rs=String(n.dataset.returnShort||'');
+        if(reviewId>0)location.href='?video='+encodeURIComponent(reviewId)+(rs?'&returnShort='+encodeURIComponent(rs):'');
+      });
+      document.querySelectorAll('[data-approve-video]').forEach(n=>n.onclick=async()=>{
+        const reviewId=Number(n.dataset.approveVideo||0);
+        if(!Number.isSafeInteger(reviewId)||reviewId<=0)return;
+        const row=n.closest('.queueItem');
+        const buttons=row?row.querySelectorAll('button'):[n];
+        buttons.forEach(b=>{b.disabled=true});
+        const before=n.textContent;n.textContent='Проверяю…';
+        try{
+          const data=await portalGet('/video?reviewId='+encodeURIComponent(reviewId));
+          const r=data.review||{};
+          if(!r.canDecide)throw new Error('Это видео уже обработано');
+          const sha=String(r.videoSha256||'').toLowerCase();
+          const bundleSha=String(r.publishBundle?.publishManifestSha256||'').toLowerCase();
+          if(!/^[0-9a-f]{64}$/.test(sha))throw new Error('Exact MP4 SHA недоступен');
+          if(!confirm('Одобрить видео без открытия просмотра?\n\n'+String(r.title||r.shortId||'Short')+'\nVID-'+String(r.reviewId||reviewId).padStart(4,'0')+'\nSHA '+sha.slice(0,16)+'…')){buttons.forEach(b=>{b.disabled=false});n.textContent=before;return}
+          n.textContent='Одобряю…';
+          await portalPost('/video/decision',{reviewId:Number(r.reviewId||reviewId),decision:'approve',videoSha256:sha,publishManifestSha256:bundleSha});
+          n.textContent='Одобрено';
+          setTimeout(()=>loadHome(),350);
+        }catch(e){
+          n.textContent=before;buttons.forEach(b=>{b.disabled=false});
+          alert('Не удалось одобрить видео: '+String(e.message||e));
+        }
+      });
       document.querySelectorAll('[data-reject-news]').forEach(n=>n.onclick=async()=>{
         const reviewId=Number(n.dataset.rejectNews||0);
         const candidateSha256=String(n.dataset.rejectSha||'').toLowerCase();
