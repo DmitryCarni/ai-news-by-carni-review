@@ -25,11 +25,11 @@ URL:
 
 Для Reviewer/Storyboard/thumbnail/video flow использовать:
 
-`docs/SHORTS_SYSTEM.md`
+`docs/knowledge/04_SHORTS_И_REVIEWER.md`
 
 Для current state:
 
-`docs/WORKING_STATE.md`
+`docs/knowledge/02_ТЕКУЩЕЕ_СОСТОЯНИЕ.md`
 
 ## Граница ответственности
 
