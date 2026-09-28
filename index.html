@@ -1479,9 +1479,15 @@
       const timingSummary=timingBeats.length
         ?timingBeats.map(x=>String(x.index)+': '+timingFmt(x.seconds)).join(' · ')+' · ролик '+timingFmt(r.storyboard?.durationSeconds||0)
         :'';
+      const currentStoryboardRevision=Number(flowState?.latestRevisionId||0);
+      const videoStoryboardRevision=Number(r.storyboard?.revisionId||0);
+      const storyboardAhead=currentStoryboardRevision>0&&videoStoryboardRevision>0&&currentStoryboardRevision>videoStoryboardRevision;
+      const oldVideoIsStale=String(r.status||'')==='superseded'||(String(r.status||'')==='rejected'&&storyboardAhead);
       const staleNotice=Number(r.resolvedFromStaleReviewId||0)>0
         ?'<div class="workspaceNeed current"><b>Обновлено:</b> старая ссылка VID-'+String(r.resolvedFromStaleReviewId).padStart(4,'0')+' автоматически заменена на актуальный '+esc(vidLabel)+'.</div>'
-        :'';
+        :oldVideoIsStale
+          ?'<div class="workspaceNeed current"><b>Старая версия:</b> '+esc(vidLabel)+' относится к revision '+esc(videoStoryboardRevision||'—')+'. Текущий макет уже revision '+esc(currentStoryboardRevision||'—')+'. Новый exact MP4 появится после «Одобрить макет и собрать видео».</div>'
+          :'';
       const visualNotice=r.visualPath?.fastPath
         ?'<div class="workspaceNeed wait"><b>Ускоренный путь:</b> отдельные макет и превью для этого Short не создавались. Видео было собрано напрямую после одобрения текста.</div>'
         :'';
@@ -1540,7 +1546,7 @@
     const workspaceFastVisualPath=q=>!!q.videoReviewId&&!q.sessionId;
     const workspaceStoryboardStatus=q=>workspaceFastVisualPath(q)?'Не создавался':!q.sessionId?'Ещё не создан':q.sessionStatus==='editing'?'Редактируется':q.sessionStatus==='approved'?'Одобрен':String(q.sessionStatus||'Готов');
     const workspaceThumbStatus=q=>workspaceFastVisualPath(q)&&!q.thumbnail?.generationStatus&&!q.thumbnail?.approved?'Не создавалось':q.thumbnail?.approved?'Утверждено':q.thumbnail?.generationStatus==='ready'?'Готово к решению':q.thumbnail?.generationStatus==='processing'?'Генерируется':q.thumbnail?.generationStatus||'Ещё не готово';
-    const workspaceVideoStatus=q=>!q.videoReviewId?'Ещё не готово':q.videoStatus==='pending'?'Ждёт решения':q.videoStatus==='approved'?'Одобрено':q.videoStatus==='rejected'?'Нужны правки':String(q.videoStatus||'—');
+    const workspaceVideoStatus=q=>!q.videoReviewId?(q.sessionStatus==='editing'?'Ждёт нового рендера после одобрения макета':'Ещё не готово'):q.videoStatus==='pending'?'Ждёт решения':q.videoStatus==='approved'?'Одобрено':q.videoStatus==='rejected'&&q.sessionStatus==='editing'?'Старая версия отклонена · ждёт нового рендера':q.videoStatus==='rejected'?'Нужны правки':String(q.videoStatus||'—');
     const workspaceYoutubeStatus=q=>{
       const state=String(q.publication?.state||''),privacy=String(q.publication?.privacyStatus||'');
       if(state==='completed'&&privacy==='public')return'Опубликовано';
@@ -1567,7 +1573,8 @@
       const textActions=q.textReviewId?'<button class="btn" data-open-editorial="'+Number(q.textReviewId)+'" data-return-short="'+esc(q.shortId||'')+'">Открыть текст</button>':'<button class="btn" disabled>Ещё нет</button>';
       const storyboardActions=q.sessionId?'<button class="btn" data-open-session-url="'+esc(workspaceSessionHref(q))+'">Открыть макет</button>':'<button class="btn" disabled>'+(workspaceFastVisualPath(q)?'Не создавался':'Ещё нет')+'</button>';
       const thumbActions=q.sessionId?'<button class="btn" data-open-session-url="'+esc(workspaceSessionHref(q,'thumbnail'))+'">Открыть превью</button>':'<button class="btn" disabled>'+(workspaceFastVisualPath(q)?'Не создавалось':'Ещё нет')+'</button>';
-      const videoActions=q.videoReviewId?'<button class="btn" data-open-video="'+Number(q.videoReviewId)+'" data-return-short="'+esc(q.shortId||'')+'">Открыть exact MP4</button>':'<button class="btn" disabled>Ещё нет</button>';
+      const staleRejectedVideo=q.videoStatus==='rejected'&&q.sessionStatus==='editing';
+      const videoActions=q.videoReviewId&&!staleRejectedVideo?'<button class="btn" data-open-video="'+Number(q.videoReviewId)+'" data-return-short="'+esc(q.shortId||'')+'">Открыть exact MP4</button>':staleRejectedVideo?'<button class="btn" disabled>Ждёт нового рендера</button>':'<button class="btn" disabled>Ещё нет</button>';
       const youtubeActions=q.sessionId?'<button class="btn" data-open-session-url="'+esc(workspaceSessionHref(q,'youtube'))+'">Настройки YouTube</button>':'<button class="btn" disabled>Ещё нет</button>';
 
       app.innerHTML='<div class="workspace">'+
