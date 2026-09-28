@@ -1,44 +1,46 @@
-# AI News by Carni — Storyboard Review frontend
+# AI News by Carni — Reviewer frontend
 
-This repository is the **public frontend shell** for the wider AI News by Carni system.
+Этот репозиторий содержит публичную frontend-оболочку Reviewer.
 
-Deployed review UI:
+URL:
+
 `https://review.carni.ltd/`
 
-## Repository role
+## Роль репозитория
 
-Owns:
-- the public Storyboard Review frontend shell;
-- browser-facing assets/code required by that shell.
+Здесь живут:
+- browser-facing UI;
+- frontend assets;
+- routing к production Edge Functions.
 
-Does **not** own:
-- global project state;
-- Storyboard approval contract;
-- production review/publisher state;
-- Shorts Factory strategy;
-- global working memory.
+Здесь **не хранится глобальная база знаний проекта** и не определяется production approval contract.
 
-The production approval/state logic lives in the private control-plane repository and Supabase.
-
-## Global source of truth
-
-Use:
+Канонический источник:
 
 `DmitryCarni/ai-news-by-carni-private`
 
-Startup packet for cross-project work:
+База знаний:
 
-1. `README.md`
-2. `docs/PROJECT_INDEX.md`
-3. `docs/WORKING_STATE.md`
-4. `docs/KNOWLEDGE_BASE_MAP.md`
+`DmitryCarni/ai-news-by-carni-private/docs/`
 
-Storyboard-specific contracts are routed from that knowledge-base map.
+Для Reviewer/Storyboard/thumbnail/video flow использовать:
 
-Do not maintain a second global project-state file here.
+`docs/SHORTS_SYSTEM.md`
 
-## Boundary
+Для current state:
 
-This repo may document **local frontend implementation details**.
+`docs/WORKING_STATE.md`
 
-If a local README/comment conflicts with the private repo's current Storyboard contract or verified production state, the verified production state/private control-plane contract wins.
+## Граница ответственности
+
+Frontend отображает и отправляет действия пользователя.
+
+Production state, immutable approvals, Storyboard revisions, thumbnail state и publisher state находятся в Supabase/private control plane.
+
+Если local UI assumption расходится с live backend contract — приоритет у проверенного live state и private repo.
+
+## Язык документации
+
+README и техническая документация ведутся на русском.
+
+Technical identifiers, API names, paths, enum, variable names и строки, которые должны совпадать с кодом, не переводятся.
