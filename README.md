@@ -1,44 +1,40 @@
-# AI News by Carni — Storyboard Review frontend
+# AI News by Carni — Reviewer frontend
 
-This repository is the **public frontend shell** for the wider AI News by Carni system.
+Этот репозиторий содержит публичную frontend-оболочку Reviewer.
 
-Deployed review UI:
+Production UI:
 `https://review.carni.ltd/`
 
-## Repository role
+## Роль репозитория
 
-Owns:
-- the public Storyboard Review frontend shell;
-- browser-facing assets/code required by that shell.
+Здесь живут:
+- browser-facing frontend;
+- GitHub Pages assets;
+- код оболочки Review control center.
 
-Does **not** own:
-- global project state;
-- Storyboard approval contract;
-- production review/publisher state;
-- Shorts Factory strategy;
-- global working memory.
+## Граница ответственности
 
-The production approval/state logic lives in the private control-plane repository and Supabase.
+Этот репозиторий **не ведёт отдельную глобальную базу знаний**.
 
-## Global source of truth
+Здесь не должны дублироваться:
+- production approval contracts;
+- Shorts Factory architecture;
+- глобальный current state;
+- publisher state;
+- Supabase state;
+- стратегическая память проекта.
 
-Use:
+Каноническая база знаний:
+`DmitryCarni/ai-news-by-carni-private/docs/knowledge/`.
 
-`DmitryCarni/ai-news-by-carni-private`
+Стартовый порядок:
+1. `PROJECT.md`;
+2. `CURRENT_STATE.md`;
+3. `SHORTS_PRODUCTION.md` для Reviewer/Storyboard/thumbnail/video задач.
 
-Startup packet for cross-project work:
+## Источник истины
 
-1. `README.md`
-2. `docs/PROJECT_INDEX.md`
-3. `docs/WORKING_STATE.md`
-4. `docs/KNOWLEDGE_BASE_MAP.md`
+Если frontend README или comment расходится с production:
+`проверенное живое состояние > private knowledge base > локальный comment`.
 
-Storyboard-specific contracts are routed from that knowledge-base map.
-
-Do not maintain a second global project-state file here.
-
-## Boundary
-
-This repo may document **local frontend implementation details**.
-
-If a local README/comment conflicts with the private repo's current Storyboard contract or verified production state, the verified production state/private control-plane contract wins.
+Production approval/state logic хранится в private repo и Supabase.
