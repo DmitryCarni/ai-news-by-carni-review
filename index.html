@@ -1501,7 +1501,7 @@
         '<div class="identityRow"><div class="identityLabel">Музыка</div><div class="identityValue">'+esc(musicLabel)+(musicId?'<br><span class="quiet">'+esc(musicId)+'</span>':'')+'</div></div>'+
         (r.storyboard?.revisionId?'<div class="identityRow"><div class="identityLabel">Storyboard identity</div><div class="identityValue">'+esc(storyboardHash)+'<br>renderer '+esc(renderer)+'</div></div>':'')+
         (timingSummary?'<div class="identityRow"><div class="identityLabel">Тайминги кадров</div><div class="identityValue">'+esc(timingSummary)+'</div></div>':'')+
-        '<div class="identityRow"><div class="identityLabel">Просмотр</div><div>Web остаётся точкой решения; exact MP4 также отправляется в Telegram для быстрого просмотра.</div></div>'+
+        '<div class="identityRow"><div class="identityLabel">Просмотр</div><div>Web остаётся канонической точкой решения. Telegram может использоваться только как опциональное fallback-уведомление при включённой настройке.</div></div>'+
         '<div class="identityRow"><div class="identityLabel">YouTube после approval</div><div>'+esc(r.youtube?.releaseMode||'—')+' · initial '+esc(r.youtube?.privacyStatus||'private')+'</div></div></div></div>'+
         (storyboardSessionId?'<div class="videoActions"><button class="btn" id="openStoryboardFromVideo">Макет и тайминги</button><button class="btn" id="openThumbnailFromVideo">Превью</button></div>':'')+
         (r.canDecide?'<div class="videoActions"><button class="btn reject" id="rejectVideo">✏️ Нужны правки</button><button class="btn green" id="approveVideo">✅ Одобрить видео</button></div>':'<div class="decisionState">Это exact MP4 уже обработан: '+esc(r.status||'—')+'.</div>')+
