@@ -170,7 +170,11 @@
       const data=await portalGet('/home');
       return (data.queue||[]).find(x=>(shortId&&String(x.shortId)===String(shortId))||(sessionId&&String(x.sessionId)===String(sessionId)))||null;
     }
-    const shortPrimaryHref=q=>'?short='+encodeURIComponent(q.shortId||'');
+    const shortPrimaryHref=q=>{
+      const current=shortCurrentKey(q);
+      const direct=current?shortHref(q,current):'';
+      return direct||'?short='+encodeURIComponent(q.shortId||'');
+    };
     const queueRejectHtml=q=>{
       const sha=String(q.candidateSha256||'').toLowerCase();
       if(q.stage!=='pending_text'||!q.textReviewId||!/^[0-9a-f]{64}$/.test(sha))return'';
